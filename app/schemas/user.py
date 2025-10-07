@@ -7,7 +7,7 @@ class UserBase(BaseModel):
     """Base User schema with common fields."""
     nis: Optional[str] = None
     name: str
-    role: UserRole = UserRole.STUDENT
+    role: UserRole = UserRole.student
     grade: Optional[UserGrade] = None
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None

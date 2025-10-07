@@ -14,13 +14,16 @@ class UserService:
     async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
         """Create a new user."""
         try:
-            # Hash the password
-            hashed_password = get_password_hash(user_data.password)
+            # Determine if user is admin for password handling
+            is_admin = user_data.role == "admin"
+            
+            # Hash password only for admin users, store plaintext for others
+            stored_password = get_password_hash(user_data.password, is_admin=is_admin)
             
             # Create user instance
             db_user = User(
                 nis=user_data.nis,
-                password=hashed_password,
+                password=stored_password,
                 name=user_data.name,
                 role=user_data.role,
                 grade=user_data.grade,
@@ -153,15 +156,18 @@ class UserService:
         if not db_user:
             return False
         
+        # Determine if user is admin for password verification
+        is_admin = db_user.role == "admin"
+        
         # Verify current password
-        if not verify_password(password_data.current_password, db_user.password):
+        if not verify_password(password_data.current_password, db_user.password, is_admin=is_admin):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current password is incorrect"
             )
         
-        # Update password
-        db_user.password = get_password_hash(password_data.new_password)
+        # Update password (hash only for admin users)
+        db_user.password = get_password_hash(password_data.new_password, is_admin=is_admin)
         await db.commit()
         return True
     
@@ -183,7 +189,10 @@ class UserService:
         if not user:
             return None
         
-        if not verify_password(password, user.password):
+        # Determine if user is admin for password verification
+        is_admin = user.role == "admin"
+        
+        if not verify_password(password, user.password, is_admin=is_admin):
             return None
         
         return user

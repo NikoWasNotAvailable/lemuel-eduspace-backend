@@ -4,11 +4,11 @@ from datetime import datetime
 import enum
 
 class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    TEACHER = "teacher"
-    STUDENT = "student"
-    PARENT = "parent"
-    STUDENT_PARENT = "student_parent"
+    admin = "admin"
+    teacher = "teacher"
+    student = "student"
+    parent = "parent"
+    student_parent = "student_parent"
 
 class UserGrade(str, enum.Enum):
     TKA = "TKA"
@@ -34,7 +34,7 @@ class User(Base):
     nis = Column(String(50), unique=True, index=True, nullable=True)
     password = Column(String(255), nullable=False)
     name = Column(String(100), nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.STUDENT, nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.student, nullable=False)
     grade = Column(Enum(UserGrade), nullable=True)
     gender = Column(Enum(UserGender), nullable=True)
     email = Column(String(100), unique=True, index=True, nullable=True)
