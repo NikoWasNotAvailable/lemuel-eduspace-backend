@@ -68,13 +68,3 @@ echo.
 echo ========================================
 echo  Setup completed successfully!
 echo ========================================
-echo.
-echo Next steps:
-echo 1. Edit .env file with your database settings
-echo 2. Create your MySQL database: eduspace
-echo 3. Run: python init_db.py (to create tables)
-echo 4. Run: start_server.bat (to start the server)
-echo.
-echo Or simply double-click start_server.bat to run the server!
-echo.
-pause
