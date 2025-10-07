@@ -68,3 +68,5 @@ echo.
 echo ========================================
 echo  Setup completed successfully!
 echo ========================================
+
+pause
