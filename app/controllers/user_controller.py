@@ -30,7 +30,7 @@ async def login_user(
     user_credentials: UserLogin,
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Authenticate user and return access token."""
+    """Authenticate user and return access token. (Excludes admin users - they must use /admin-auth/login)"""
     user = await UserService.authenticate_user(
         db, user_credentials.identifier, user_credentials.password
     )
@@ -40,6 +40,13 @@ async def login_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect identifier or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Prevent admin users from using regular login
+    if user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin users must use the dedicated admin login endpoint: /api/v1/admin-auth/login",
         )
     
     # Create access token
