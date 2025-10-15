@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Enum, Date, DateTime, func
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
 import enum
@@ -24,8 +25,8 @@ class UserGrade(str, enum.Enum):
     SMP3 = "SMP3"
 
 class UserGender(str, enum.Enum):
-    MALE = "male"
-    FEMALE = "female"
+    male = "male"
+    female = "female"
 
 class User(Base):
     __tablename__ = "users"
@@ -47,6 +48,9 @@ class User(Base):
         onupdate=func.current_timestamp(), 
         nullable=False
     )
+    
+    # Relationship to teacher_subjects
+    teacher_subjects = relationship("TeacherSubject", back_populates="teacher", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', role='{self.role}')>"
