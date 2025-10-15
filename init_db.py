@@ -6,6 +6,7 @@ Run this to create tables in your database
 import asyncio
 from app.core.database import async_engine, Base
 from app.models.user import User  # Import to register the model
+from app.models.classroom import ClassModel  # Import to register the model
 
 async def create_tables():
     """Create all tables."""
