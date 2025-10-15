@@ -84,3 +84,20 @@ CREATE TABLE `user_notifications` (
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `admin_login_logs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `admin_user_id` INT NOT NULL,                       -- FK ke tabel users
+  `admin_name` VARCHAR(100) NOT NULL,                 -- Nama admin yang login
+  `admin_email` VARCHAR(100) NOT NULL,                -- Email admin yang login
+  `login_time` DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,  -- Waktu login
+  `logout_time` DATETIME DEFAULT NULL,                -- Waktu logout
+  `session_token` VARCHAR(255) NOT NULL,              -- Token sesi (misalnya JWT)
+  `ip_address` VARCHAR(45) DEFAULT NULL,              -- IP address (support IPv6)
+  `user_agent` VARCHAR(500) DEFAULT NULL,             -- Browser/device info
+  FOREIGN KEY (`admin_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
