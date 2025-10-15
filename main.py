@@ -8,6 +8,7 @@ from app.controllers.teacher_subject_controller import router as teacher_subject
 from app.controllers.student_class_controller import router as student_class_router
 from app.controllers.admin_auth_controller import router as admin_auth_router
 from app.controllers.notification_controller import router as notification_router
+from app.controllers.user_notification_controller import router as user_notification_router
 
 # Create FastAPI instance
 app = FastAPI(
@@ -33,6 +34,7 @@ app.include_router(teacher_subject_router, prefix="/api/v1")
 app.include_router(student_class_router, prefix="/api/v1")
 app.include_router(admin_auth_router, prefix="/api/v1")
 app.include_router(notification_router, prefix="/api/v1")
+app.include_router(user_notification_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

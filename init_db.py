@@ -12,6 +12,7 @@ from app.models.teacher_subject import TeacherSubject  # Import to register the 
 from app.models.student_class import StudentClass  # Import to register the model
 from app.models.admin_login_log import AdminLoginLog  # Import to register the model
 from app.models.notification import Notification  # Import to register the model
+from app.models.user_notification import UserNotification  # Import to register the model
 
 async def create_tables():
     """Create all tables."""
