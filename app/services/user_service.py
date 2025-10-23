@@ -196,3 +196,47 @@ class UserService:
             return None
         
         return user
+    
+    @staticmethod
+    async def update_profile_picture(
+        db: AsyncSession, 
+        user_id: int, 
+        profile_picture_path: str
+    ) -> Optional[User]:
+        """Update user's profile picture path."""
+        db_user = await UserService.get_user_by_id(db, user_id)
+        if not db_user:
+            return None
+        
+        db_user.profile_picture = profile_picture_path
+        
+        try:
+            await db.commit()
+            await db.refresh(db_user)
+            return db_user
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update profile picture"
+            )
+    
+    @staticmethod
+    async def remove_profile_picture(db: AsyncSession, user_id: int) -> Optional[User]:
+        """Remove user's profile picture."""
+        db_user = await UserService.get_user_by_id(db, user_id)
+        if not db_user:
+            return None
+        
+        db_user.profile_picture = None
+        
+        try:
+            await db.commit()
+            await db.refresh(db_user)
+            return db_user
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to remove profile picture"
+            )

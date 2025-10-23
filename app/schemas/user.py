@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     region: Optional[str] = None
     dob: Optional[date] = None
+    profile_picture: Optional[str] = None
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
@@ -40,6 +41,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     region: Optional[str] = None
     dob: Optional[date] = None
+    profile_picture: Optional[str] = None
 
 class UserChangePassword(BaseModel):
     """Schema for changing user password."""
@@ -80,3 +82,9 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Token data schema."""
     user_id: Optional[int] = None
+
+class ProfilePictureUploadResponse(BaseModel):
+    """Schema for profile picture upload response."""
+    success: bool
+    message: str
+    profile_picture_url: Optional[str] = None

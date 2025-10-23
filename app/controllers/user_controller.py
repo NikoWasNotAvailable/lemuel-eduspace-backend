@@ -1,17 +1,21 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+import os
 from app.core.database import get_async_db
 from app.core.auth import get_current_user, get_admin_user
 from app.core.security import create_access_token
 from app.services.user_service import UserService
+from app.services.profile_picture_service import ProfilePictureService
 from app.schemas.user import (
     UserCreate, 
     UserUpdate, 
     UserResponse, 
     UserLogin, 
     UserLoginResponse,
-    UserChangePassword
+    UserChangePassword,
+    ProfilePictureUploadResponse
 )
 from app.models.user import User
 
@@ -153,3 +157,131 @@ async def delete_user_by_id(
             detail="User not found"
         )
     return {"message": "User deleted successfully"}
+
+@router.post("/profile-picture", response_model=ProfilePictureUploadResponse)
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload profile picture for the current user."""
+    try:
+        # Delete old profile picture if exists
+        if current_user.profile_picture:
+            ProfilePictureService.delete_profile_picture(current_user.profile_picture)
+        
+        # Save new profile picture
+        file_path = await ProfilePictureService.save_profile_picture(file, current_user.id)
+        
+        # Update user record
+        updated_user = await UserService.update_profile_picture(db, current_user.id, file_path)
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Generate profile picture URL
+        profile_picture_url = ProfilePictureService.get_profile_picture_url(
+            file_path, 
+            base_url=""  # You can set this to your domain
+        )
+        
+        return ProfilePictureUploadResponse(
+            success=True,
+            message="Profile picture uploaded successfully",
+            profile_picture_url=profile_picture_url
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload profile picture"
+        )
+
+@router.get("/profile-picture/{filename}")
+async def get_profile_picture(filename: str):
+    """Serve profile picture files."""
+    file_path = os.path.join(ProfilePictureService.UPLOAD_DIRECTORY, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile picture not found"
+        )
+    
+    return FileResponse(file_path)
+
+@router.delete("/profile-picture")
+async def delete_profile_picture(
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete the current user's profile picture."""
+    if not current_user.profile_picture:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No profile picture to delete"
+        )
+    
+    # Delete file from disk
+    ProfilePictureService.delete_profile_picture(current_user.profile_picture)
+    
+    # Update user record
+    updated_user = await UserService.remove_profile_picture(db, current_user.id)
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {"message": "Profile picture deleted successfully"}
+
+@router.post("/{user_id}/profile-picture", response_model=ProfilePictureUploadResponse)
+async def upload_user_profile_picture(
+    user_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_admin_user)
+):
+    """Upload profile picture for a specific user (admin only)."""
+    # Check if target user exists
+    target_user = await UserService.get_user_by_id(db, user_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    try:
+        # Delete old profile picture if exists
+        if target_user.profile_picture:
+            ProfilePictureService.delete_profile_picture(target_user.profile_picture)
+        
+        # Save new profile picture
+        file_path = await ProfilePictureService.save_profile_picture(file, user_id)
+        
+        # Update user record
+        updated_user = await UserService.update_profile_picture(db, user_id, file_path)
+        
+        # Generate profile picture URL
+        profile_picture_url = ProfilePictureService.get_profile_picture_url(
+            file_path, 
+            base_url=""
+        )
+        
+        return ProfilePictureUploadResponse(
+            success=True,
+            message="Profile picture uploaded successfully",
+            profile_picture_url=profile_picture_url
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload profile picture"
+        )

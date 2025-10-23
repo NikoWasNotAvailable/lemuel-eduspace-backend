@@ -41,6 +41,7 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=True)
     region = Column(String(100), nullable=True)
     dob = Column(Date, nullable=True)
+    profile_picture = Column(String(500), nullable=True)  # Path to profile picture file
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     updated_at = Column(
         DateTime, 
