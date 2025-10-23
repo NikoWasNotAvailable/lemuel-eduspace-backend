@@ -13,8 +13,10 @@ class NotificationService:
         """Create a new notification."""
         notification = Notification(
             title=notification_data.title,
-            subject=notification_data.subject,
-            type=notification_data.type
+            description=notification_data.description,
+            type=notification_data.type,
+            nominal=notification_data.nominal,
+            date=notification_data.date
         )
         
         db.add(notification)
@@ -33,8 +35,10 @@ class NotificationService:
         for notification_data in bulk_data.notifications:
             notification = Notification(
                 title=notification_data.title,
-                subject=notification_data.subject,
-                type=notification_data.type
+                description=notification_data.description,
+                type=notification_data.type,
+                nominal=notification_data.nominal,
+                date=notification_data.date
             )
             notifications.append(notification)
         
@@ -115,10 +119,14 @@ class NotificationService:
         update_data = {}
         if notification_update.title is not None:
             update_data["title"] = notification_update.title
-        if notification_update.subject is not None:
-            update_data["subject"] = notification_update.subject
+        if notification_update.description is not None:
+            update_data["description"] = notification_update.description
         if notification_update.type is not None:
             update_data["type"] = notification_update.type
+        if notification_update.nominal is not None:
+            update_data["nominal"] = notification_update.nominal
+        if notification_update.date is not None:
+            update_data["date"] = notification_update.date
         
         if not update_data:
             return notification  # No changes to make

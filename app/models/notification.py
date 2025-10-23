@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, func
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, DECIMAL, func
 from app.core.database import Base
 import enum
 
@@ -14,8 +14,10 @@ class Notification(Base):
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(255), nullable=False)
-    subject = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
     type = Column(Enum(NotificationType), default=NotificationType.general, nullable=False)
+    nominal = Column(DECIMAL(10, 2), nullable=True)  # Optional, for payment notifications
+    date = Column(DateTime, nullable=True)  # Optional, for events and assignments
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     
     def __repr__(self):

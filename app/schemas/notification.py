@@ -1,13 +1,16 @@
 from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
+from decimal import Decimal
 from app.models.notification import NotificationType
 
 # Base schemas
 class NotificationBase(BaseModel):
     title: str
-    subject: Optional[str] = None
+    description: Optional[str] = None
     type: NotificationType = NotificationType.general
+    nominal: Optional[Decimal] = None  # Optional, for payment notifications
+    date: Optional[datetime] = None  # Optional, for events and assignments
 
 class NotificationCreate(NotificationBase):
     @validator('title')
@@ -18,16 +21,37 @@ class NotificationCreate(NotificationBase):
             raise ValueError('Title must not exceed 255 characters')
         return v.strip()
     
-    @validator('subject')
-    def validate_subject(cls, v):
+    @validator('description')
+    def validate_description(cls, v):
         if v is not None and len(v.strip()) == 0:
             return None
+        return v
+    
+    @validator('nominal')
+    def validate_nominal(cls, v, values):
+        if v is not None:
+            if v < 0:
+                raise ValueError('Nominal amount must be non-negative')
+            # Check if nominal is provided for non-payment notifications
+            notification_type = values.get('type')
+            if notification_type and notification_type != NotificationType.payment:
+                raise ValueError('Nominal can only be set for payment notifications')
+        return v
+    
+    @validator('date')
+    def validate_date(cls, v, values):
+        if v is not None:
+            notification_type = values.get('type')
+            if notification_type and notification_type not in [NotificationType.event, NotificationType.assignment]:
+                raise ValueError('Date can only be set for event and assignment notifications')
         return v
 
 class NotificationUpdate(BaseModel):
     title: Optional[str] = None
-    subject: Optional[str] = None
+    description: Optional[str] = None
     type: Optional[NotificationType] = None
+    nominal: Optional[Decimal] = None
+    date: Optional[datetime] = None
     
     @validator('title')
     def validate_title(cls, v):
@@ -38,10 +62,16 @@ class NotificationUpdate(BaseModel):
                 raise ValueError('Title must not exceed 255 characters')
         return v.strip() if v else v
     
-    @validator('subject')
-    def validate_subject(cls, v):
+    @validator('description')
+    def validate_description(cls, v):
         if v is not None and len(v.strip()) == 0:
             return None
+        return v
+    
+    @validator('nominal')
+    def validate_nominal(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Nominal amount must be non-negative')
         return v
 
 class NotificationBulkCreate(BaseModel):
