@@ -15,6 +15,9 @@ class Subject(Base):
     # Relationship to teacher_subjects
     teacher_subjects = relationship("TeacherSubject", back_populates="subject", cascade="all, delete-orphan")
     
+    # Relationship to sessions
+    sessions = relationship("Session", back_populates="subject", cascade="all, delete-orphan")
+    
     # Unique constraint for class_id and name combination
     __table_args__ = (
         UniqueConstraint('class_id', 'name', name='unique_class_subject'),
