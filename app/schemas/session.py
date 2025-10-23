@@ -1,9 +1,6 @@
 from pydantic import BaseModel, validator
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, Dict, Any
 from datetime import datetime, date as DateType
-
-if TYPE_CHECKING:
-    from app.schemas.session_attachment import SessionAttachmentResponse
 
 # Base schemas
 class SessionBase(BaseModel):
@@ -62,7 +59,7 @@ class SessionWithSubjectResponse(SessionResponse):
     model_config = {"from_attributes": True}
 
 class SessionWithAttachmentsResponse(SessionResponse):
-    attachments: List["SessionAttachmentResponse"] = []
+    attachments: List[Dict[str, Any]] = []
     
     model_config = {"from_attributes": True}
 

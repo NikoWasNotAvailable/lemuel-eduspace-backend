@@ -12,7 +12,6 @@ from app.schemas.session import (
     SessionUpdate,
     SessionResponse,
     SessionWithSubjectResponse,
-    SessionWithAttachmentsResponse,
     SessionListResponse,
     SessionStatsResponse
 )
@@ -121,13 +120,13 @@ async def get_next_session_number(
     next_number = await SessionService.get_next_session_number(db, subject_id)
     return {"subject_id": subject_id, "next_session_number": next_number}
 
-@router.get("/{session_id}", response_model=SessionWithAttachmentsResponse)
+@router.get("/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: int,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get session by ID with attachments."""
+    """Get session by ID."""
     session = await SessionService.get_session_by_id(db, session_id)
     if not session:
         raise HTTPException(
@@ -136,6 +135,34 @@ async def get_session(
         )
     
     return session
+
+@router.get("/{session_id}/attachments")
+async def get_session_attachments(
+    session_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get session attachments separately to avoid circular reference."""
+    session = await SessionService.get_session_by_id(db, session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    # Return just the attachments as a simple list
+    attachments = []
+    for attachment in session.attachments:
+        attachments.append({
+            "id": attachment.id,
+            "filename": attachment.filename,
+            "file_size": attachment.file_size,
+            "content_type": attachment.content_type,
+            "created_at": attachment.created_at.isoformat(),
+            "uploaded_by": attachment.uploaded_by
+        })
+    
+    return {"session_id": session_id, "attachments": attachments}
 
 @router.put("/{session_id}", response_model=SessionResponse)
 async def update_session(
