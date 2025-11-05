@@ -15,13 +15,32 @@ from datetime import datetime
 
 router = APIRouter(prefix="/admin-auth", tags=["admin-authentication"])
 
-@router.post("/login", response_model=AdminLoginResponse)
+@router.post("/login/admin", response_model=AdminLoginResponse)
 async def admin_login(
     login_data: AdminLoginRequest,
     request: Request,
     db: AsyncSession = Depends(get_async_db)
 ):
     """Admin login with name tracking and session logging."""
+    
+    admin_user, login_log = await AdminAuthService.authenticate_admin(db, login_data, request)
+    
+    return AdminLoginResponse(
+        access_token=login_log.session_token,
+        token_type="bearer",
+        admin_user_id=admin_user.id,
+        admin_name=login_data.name,
+        login_time=login_log.login_time,
+        session_id=login_log.id
+    )
+
+@router.post("/login", response_model=AdminLoginResponse)
+async def admin_login_fallback(
+    login_data: AdminLoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Admin login fallback endpoint (same as /login/admin)."""
     
     admin_user, login_log = await AdminAuthService.authenticate_admin(db, login_data, request)
     

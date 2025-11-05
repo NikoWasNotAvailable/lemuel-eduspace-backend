@@ -29,12 +29,111 @@ async def register_user(
     """Register a new user."""
     return await UserService.create_user(db, user_data)
 
+@router.post("/login/student", response_model=UserLoginResponse)
+async def login_student(
+    user_credentials: UserLogin,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Authenticate student and return access token."""
+    user = await UserService.authenticate_user(
+        db, user_credentials.identifier, user_credentials.password
+    )
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect identifier or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Only allow student users
+    if user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is only for student users",
+        )
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": str(user.id)})
+    
+    return UserLoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+@router.post("/login/parent", response_model=UserLoginResponse)
+async def login_parent(
+    user_credentials: UserLogin,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Authenticate parent and return access token."""
+    user = await UserService.authenticate_user(
+        db, user_credentials.identifier, user_credentials.password
+    )
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect identifier or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Only allow parent users
+    if user.role not in ["parent", "student_parent"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is only for parent users",
+        )
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": str(user.id)})
+    
+    return UserLoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+@router.post("/login/teacher", response_model=UserLoginResponse)
+async def login_teacher(
+    user_credentials: UserLogin,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Authenticate teacher and return access token."""
+    user = await UserService.authenticate_user(
+        db, user_credentials.identifier, user_credentials.password
+    )
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect identifier or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Only allow teacher users
+    if user.role != "teacher":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is only for teacher users",
+        )
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": str(user.id)})
+    
+    return UserLoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
 @router.post("/login", response_model=UserLoginResponse)
 async def login_user(
     user_credentials: UserLogin,
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Authenticate user and return access token. (Excludes admin users - they must use /admin-auth/login)"""
+    """General authentication endpoint (excludes admin users - they must use /admin-auth/login)"""
     user = await UserService.authenticate_user(
         db, user_credentials.identifier, user_credentials.password
     )
@@ -50,7 +149,7 @@ async def login_user(
     if user.role == "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin users must use the dedicated admin login endpoint: /api/v1/admin-auth/login",
+            detail="Admin users must use the dedicated admin login endpoint: /api/v1/admin-auth/login/admin or /api/v1/admin-auth/login",
         )
     
     # Create access token
