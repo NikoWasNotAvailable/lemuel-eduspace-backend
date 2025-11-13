@@ -10,6 +10,7 @@ from app.services.user_service import UserService
 from app.services.profile_picture_service import ProfilePictureService
 from app.schemas.user import (
     UserCreate, 
+    PublicUserCreate,
     UserUpdate, 
     UserResponse, 
     UserLogin, 
@@ -26,8 +27,78 @@ async def register_user(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Register a new user."""
+    """Register a new user (students, parents, and teachers only - NOT admins)."""
+    
+    # Security: Prevent admin registration through public endpoint
+    if user_data.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin users cannot be registered through this endpoint. Use admin-only registration."
+        )
+    
     return await UserService.create_user(db, user_data)
+
+@router.post("/register/student", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_student(
+    user_data: PublicUserCreate,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Register a new student."""
+    
+    # Convert to UserCreate with student role
+    user_create_data = UserCreate(
+        **user_data.dict(),
+        role="student"
+    )
+    
+    return await UserService.create_user(db, user_create_data)
+
+@router.post("/register/parent", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_parent(
+    user_data: PublicUserCreate,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Register a new parent."""
+    
+    # Convert to UserCreate with parent role
+    user_create_data = UserCreate(
+        **user_data.dict(),
+        role="parent"
+    )
+    
+    return await UserService.create_user(db, user_create_data)
+
+@router.post("/register/teacher", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_teacher(
+    user_data: PublicUserCreate,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_admin_user)  # Admin only
+):
+    """Register a new teacher (admin only)."""
+    
+    # Convert to UserCreate with teacher role
+    user_create_data = UserCreate(
+        **user_data.dict(),
+        role="teacher"
+    )
+    
+    return await UserService.create_user(db, user_create_data)
+
+@router.post("/register/admin", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_admin(
+    user_data: PublicUserCreate,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_admin_user)  # Admin only
+):
+    """Register a new admin (admin only)."""
+    
+    # Convert to UserCreate with admin role
+    user_create_data = UserCreate(
+        **user_data.dict(),
+        role="admin"
+    )
+    
+    return await UserService.create_user(db, user_create_data)
 
 @router.post("/login/student", response_model=UserLoginResponse)
 async def login_student(
