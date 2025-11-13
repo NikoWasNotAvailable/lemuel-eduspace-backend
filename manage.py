@@ -13,8 +13,11 @@ from sqlalchemy import text
 from app.core.database import async_engine
 from app.services.user_service import UserService
 from app.schemas.user import UserCreate
-from app.models.user import UserRole, UserGender
+from app.models.user import UserRole, UserGender, UserReligion, UserStatus
 from app.core.security import get_password_hash
+
+# Import all models to ensure they are registered with SQLAlchemy
+from app.models import *
 
 
 class AdminManager:
@@ -69,6 +72,39 @@ class AdminManager:
         elif gender_choice == "2":
             gender = UserGender.female
         
+        # Religion selection
+        print("\nReligion options:")
+        print("1. Islam")
+        print("2. Christian")
+        print("3. Catholic")
+        print("4. Hindu")
+        print("5. Buddhism")
+        print("6. Confucianism")
+        print("7. Other")
+        print("8. Skip (leave blank)")
+        religion_choice = input("Select religion (1-8): ").strip()
+        religion = None
+        if religion_choice == "1":
+            religion = UserReligion.islam
+        elif religion_choice == "2":
+            religion = UserReligion.christian
+        elif religion_choice == "3":
+            religion = UserReligion.catholic
+        elif religion_choice == "4":
+            religion = UserReligion.hindu
+        elif religion_choice == "5":
+            religion = UserReligion.buddhism
+        elif religion_choice == "6":
+            religion = UserReligion.confucianism
+        elif religion_choice == "7":
+            religion = UserReligion.other
+        
+        # Birth place
+        birth_place = input("Birth place (optional): ").strip() or None
+        
+        # Address
+        address = input("Address (optional): ").strip() or None
+        
         # Password input
         print("\n🔑 Set admin password:")
         while True:
@@ -93,7 +129,11 @@ class AdminManager:
                     email=email,
                     password=password,
                     role=UserRole.admin,
-                    gender=gender
+                    gender=gender,
+                    religion=religion,
+                    birth_place=birth_place,
+                    address=address,
+                    status=UserStatus.active
                 )
                 
                 admin_user = await UserService.create_user(db, user_data)
@@ -105,7 +145,12 @@ class AdminManager:
                 print(f"📛 Name: {admin_user.name}")
                 print(f"📧 Email: {admin_user.email or 'Not set'}")
                 print(f"⚡ Role: {admin_user.role}")
-                print(f"📅 Created: {admin_user.created_at}")
+                print(f"👤 Gender: {admin_user.gender or 'Not set'}")
+                print(f"🕊️ Religion: {admin_user.religion or 'Not set'}")
+                print(f"📍 Birth Place: {admin_user.birth_place or 'Not set'}")
+                print(f"🏠 Address: {admin_user.address or 'Not set'}")
+                print(f"🟢 Status: {admin_user.status}")
+                print(f"� Created: {admin_user.created_at}")
                 print("=" * 50)
                 
             except Exception as e:
@@ -131,7 +176,8 @@ class AdminManager:
                     name="System Administrator",
                     email="admin@eduspace.com",
                     password=default_password,
-                    role=UserRole.admin
+                    role=UserRole.admin,
+                    status=UserStatus.active
                 )
                 
                 admin_user = await UserService.create_user(db, user_data)
@@ -169,7 +215,12 @@ class AdminManager:
                     print(f"   🏷️  NIS: {admin.nis}")
                     print(f"   📛 Name: {admin.name}")
                     print(f"   📧 Email: {admin.email or 'Not set'}")
-                    print(f"   📅 Created: {admin.created_at}")
+                    print(f"   👤 Gender: {admin.gender or 'Not set'}")
+                    print(f"   🕊️ Religion: {admin.religion or 'Not set'}")
+                    print(f"   📍 Birth Place: {admin.birth_place or 'Not set'}")
+                    print(f"   🏠 Address: {admin.address or 'Not set'}")
+                    print(f"   🟢 Status: {admin.status}")
+                    print(f"   � Created: {admin.created_at}")
                     print(f"   🔄 Updated: {admin.updated_at}")
                     print()
                 

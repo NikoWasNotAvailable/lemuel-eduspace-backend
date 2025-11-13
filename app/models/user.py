@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, Date, DateTime, func
+from sqlalchemy import Column, Integer, String, Enum, Date, DateTime, func, Text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
@@ -28,6 +28,20 @@ class UserGender(str, enum.Enum):
     male = "male"
     female = "female"
 
+class UserReligion(str, enum.Enum):
+    islam = "islam"
+    christian = "christian"
+    catholic = "catholic"
+    hindu = "hindu"
+    buddhism = "buddhism"
+    confucianism = "confucianism"
+    other = "other"
+
+class UserStatus(str, enum.Enum):
+    active = "active"
+    inactive = "inactive"
+    suspended = "suspended"
+
 class User(Base):
     __tablename__ = "users"
     
@@ -41,6 +55,10 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=True)
     region = Column(String(100), nullable=True)
     dob = Column(Date, nullable=True)
+    birth_place = Column(String(100), nullable=True)  # Tempat lahir
+    address = Column(Text, nullable=True)  # Alamat lengkap
+    religion = Column(Enum(UserReligion), nullable=True)  # Agama
+    status = Column(Enum(UserStatus), default=UserStatus.active, nullable=False)  # Status pengguna
     profile_picture = Column(String(500), nullable=True)  # Path to profile picture file
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     updated_at = Column(

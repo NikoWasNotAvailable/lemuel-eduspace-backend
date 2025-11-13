@@ -30,7 +30,11 @@ class UserService:
                 gender=user_data.gender,
                 email=user_data.email,
                 region=user_data.region,
-                dob=user_data.dob
+                dob=user_data.dob,
+                birth_place=user_data.birth_place,
+                address=user_data.address,
+                religion=user_data.religion,
+                status=user_data.status
             )
             
             db.add(db_user)
@@ -90,7 +94,8 @@ class UserService:
         skip: int = 0, 
         limit: int = 100,
         role: Optional[str] = None,
-        grade: Optional[str] = None
+        grade: Optional[str] = None,
+        status: Optional[str] = None
     ) -> List[User]:
         """Get list of users with filters."""
         query = select(User)
@@ -100,6 +105,8 @@ class UserService:
             query = query.where(User.role == role)
         if grade:
             query = query.where(User.grade == grade)
+        if status:
+            query = query.where(User.status == status)
         
         # Apply pagination
         query = query.offset(skip).limit(limit)

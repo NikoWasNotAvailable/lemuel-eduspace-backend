@@ -275,11 +275,12 @@ async def get_users(
     limit: int = Query(100, ge=1, le=1000),
     role: Optional[str] = Query(None),
     grade: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
     """Get list of users (admin only)."""
-    users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade)
+    users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status)
     return [UserResponse.model_validate(user) for user in users]
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -327,6 +328,52 @@ async def delete_user_by_id(
             detail="User not found"
         )
     return {"message": "User deleted successfully"}
+
+@router.patch("/{user_id}/status")
+async def update_user_status(
+    user_id: int,
+    status: str = Query(..., regex="^(active|inactive|suspended)$"),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_admin_user)
+):
+    """Update user status (admin only)."""
+    from app.schemas.user import UserUpdate
+    from app.models.user import UserStatus
+    
+    # Convert string to enum
+    try:
+        status_enum = UserStatus(status)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid status value"
+        )
+    
+    user_update = UserUpdate(status=status_enum)
+    updated_user = await UserService.update_user(db, user_id, user_update)
+    
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "message": f"User status updated to {status}",
+        "user": UserResponse.model_validate(updated_user)
+    }
+
+@router.get("/status/{status}")
+async def get_users_by_status(
+    status: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_admin_user)
+):
+    """Get users by status (admin only)."""
+    users = await UserService.get_users(db, skip=skip, limit=limit, status=status)
+    return [UserResponse.model_validate(user) for user in users]
 
 @router.post("/profile-picture", response_model=ProfilePictureUploadResponse)
 async def upload_profile_picture(

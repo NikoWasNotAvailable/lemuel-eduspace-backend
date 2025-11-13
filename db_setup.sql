@@ -9,6 +9,11 @@ CREATE TABLE `users` (
   `email` VARCHAR(100) UNIQUE,
   `region` VARCHAR(100) DEFAULT NULL,
   `dob` DATE DEFAULT NULL,
+  `birth_place` VARCHAR(100) DEFAULT NULL,                 -- Tempat lahir
+  `address` TEXT DEFAULT NULL,                             -- Alamat lengkap
+  `religion` ENUM('islam', 'christian', 'catholic', 'hindu', 'buddhism', 'confucianism', 'other') DEFAULT NULL,  -- Agama
+  `status` ENUM('active', 'inactive', 'suspended') DEFAULT 'active',  -- Status pengguna
+  `profile_picture` VARCHAR(500) DEFAULT NULL,             -- Path to profile picture file
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )

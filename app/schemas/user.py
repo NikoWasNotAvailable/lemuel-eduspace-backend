@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
 from datetime import date, datetime
-from app.models.user import UserRole, UserGrade, UserGender
+from app.models.user import UserRole, UserGrade, UserGender, UserReligion, UserStatus
 
 class UserBase(BaseModel):
     """Base User schema with common fields."""
@@ -13,6 +13,10 @@ class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     region: Optional[str] = None
     dob: Optional[date] = None
+    birth_place: Optional[str] = None
+    address: Optional[str] = None
+    religion: Optional[UserReligion] = None
+    status: UserStatus = UserStatus.active
     profile_picture: Optional[str] = None
 
 class UserCreate(UserBase):
@@ -41,6 +45,10 @@ class PublicUserCreate(BaseModel):
     email: Optional[EmailStr] = None
     region: Optional[str] = None
     dob: Optional[date] = None
+    birth_place: Optional[str] = None
+    address: Optional[str] = None
+    religion: Optional[UserReligion] = None
+    status: UserStatus = UserStatus.active
     
     @validator('password')
     def validate_password(cls, v):
@@ -64,6 +72,10 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     region: Optional[str] = None
     dob: Optional[date] = None
+    birth_place: Optional[str] = None
+    address: Optional[str] = None
+    religion: Optional[UserReligion] = None
+    status: Optional[UserStatus] = None
     profile_picture: Optional[str] = None
 
 class UserChangePassword(BaseModel):
