@@ -98,6 +98,16 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+class AdminUserResponse(UserBase):
+    """Schema for admin user response (includes sensitive data like password hash)."""
+    id: int
+    password: str  # WARNING: This includes the hashed password - only for admin use
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 class UserLogin(BaseModel):
     """Schema for user login."""
     identifier: str  # Can be NIS or email

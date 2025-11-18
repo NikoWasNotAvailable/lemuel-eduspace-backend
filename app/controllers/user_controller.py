@@ -13,6 +13,7 @@ from app.schemas.user import (
     PublicUserCreate,
     UserUpdate, 
     UserResponse, 
+    AdminUserResponse,
     UserLogin, 
     UserLoginResponse,
     UserChangePassword,
@@ -269,7 +270,7 @@ async def change_current_user_password(
         )
     return {"message": "Password changed successfully"}
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/", response_model=List[AdminUserResponse])
 async def get_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -279,24 +280,24 @@ async def get_users(
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
-    """Get list of users (admin only)."""
+    """Get list of users (admin only) - WARNING: Includes password hashes."""
     users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status)
-    return [UserResponse.model_validate(user) for user in users]
+    return [AdminUserResponse.model_validate(user) for user in users]
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=AdminUserResponse)
 async def get_user_by_id(
     user_id: int,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
-    """Get user by ID (admin only)."""
+    """Get user by ID (admin only) - WARNING: Includes password hash."""
     user = await UserService.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return UserResponse.model_validate(user)
+    return AdminUserResponse.model_validate(user)
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user_by_id(
