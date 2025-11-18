@@ -21,6 +21,9 @@ from app.schemas.user import (
     UserLogin, 
     UserLoginResponse,
     UserChangePassword,
+    ParentPasswordSet,
+    ParentPasswordChange,
+    ParentLogin,
     ProfilePictureUploadResponse
 )
 from app.models.user import User
@@ -537,4 +540,119 @@ async def upload_user_profile_picture(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upload profile picture"
+        )# Parent Password Management Endpoints
+
+@router.post("/login/parent", response_model=UserLoginResponse)
+async def login_parent_access(
+    parent_credentials: ParentLogin,
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Authenticate parent access to student account using parent password."""
+    user = await UserService.authenticate_parent_access(
+        db, parent_credentials.identifier, parent_credentials.parent_password
+    )
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials or no parent access available",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token with parent access indicator
+    access_token = create_access_token(data={"sub": str(user.id), "parent_access": True})
+    
+    return UserLoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+@router.post("/me/parent-password/set")
+async def set_parent_password(
+    password_data: ParentPasswordSet,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Set parent password for current student account."""
+    
+    # Only students can set parent passwords
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can set parent passwords"
+        )
+    
+    success = await UserService.set_parent_password(
+        db, 
+        current_user.id, 
+        password_data.student_password,
+        password_data.parent_password
+    )
+    
+    if success:
+        return {"message": "Parent password set successfully"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to set parent password"
+        )
+
+@router.post("/me/parent-password/change")
+async def change_parent_password(
+    password_data: ParentPasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Change parent password for current student account."""
+    
+    # Only students can change parent passwords
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can change parent passwords"
+        )
+    
+    success = await UserService.change_parent_password(
+        db, 
+        current_user.id, 
+        password_data.current_parent_password,
+        password_data.new_parent_password
+    )
+    
+    if success:
+        return {"message": "Parent password changed successfully"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to change parent password"
+        )
+
+@router.delete("/me/parent-password")
+async def remove_parent_password(
+    student_password: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db)
+):
+    """Remove parent password from current student account."""
+    
+    # Only students can remove parent passwords
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can remove parent passwords"
+        )
+    
+    success = await UserService.remove_parent_password(
+        db, 
+        current_user.id, 
+        student_password
+    )
+    
+    if success:
+        return {"message": "Parent password removed successfully"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove parent password"
         )

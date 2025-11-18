@@ -48,6 +48,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nis = Column(String(50), unique=True, index=True, nullable=True)
     password = Column(String(255), nullable=False)
+    parent_password = Column(String(255), nullable=True)  # Password for parent access to student account
     name = Column(String(100), nullable=False)
     role = Column(Enum(UserRole), default=UserRole.student, nullable=False)
     grade = Column(Enum(UserGrade), nullable=True)

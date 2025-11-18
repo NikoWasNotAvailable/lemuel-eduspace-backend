@@ -18,6 +18,7 @@ class UserBase(BaseModel):
     religion: Optional[UserReligion] = None
     status: UserStatus = UserStatus.active
     profile_picture: Optional[str] = None
+    parent_password: Optional[str] = None  # Only for student roles
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
@@ -27,6 +28,14 @@ class UserCreate(UserBase):
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        return v
+    
+    @validator('parent_password')
+    def validate_parent_password(cls, v, values):
+        # Only validate parent_password for student roles
+        if v is not None:
+            if len(v) < 8:
+                raise ValueError('Parent password must be at least 8 characters long')
         return v
     
     @validator('nis')
@@ -40,6 +49,7 @@ class PublicUserCreate(BaseModel):
     nis: Optional[str] = None
     name: str
     password: str
+    parent_password: Optional[str] = None  # Only for student registrations
     grade: Optional[UserGrade] = None
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
@@ -77,6 +87,7 @@ class UserUpdate(BaseModel):
     religion: Optional[UserReligion] = None
     status: Optional[UserStatus] = None
     profile_picture: Optional[str] = None
+    parent_password: Optional[str] = None
 
 class UserChangePassword(BaseModel):
     """Schema for changing user password."""
@@ -88,6 +99,33 @@ class UserChangePassword(BaseModel):
         if len(v) < 8:
             raise ValueError('New password must be at least 8 characters long')
         return v
+
+class ParentPasswordSet(BaseModel):
+    """Schema for setting parent password (student only)."""
+    student_password: str  # Student's current password for verification
+    parent_password: str
+    
+    @validator('parent_password')
+    def validate_parent_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Parent password must be at least 8 characters long')
+        return v
+
+class ParentPasswordChange(BaseModel):
+    """Schema for changing parent password."""
+    current_parent_password: str
+    new_parent_password: str
+    
+    @validator('new_parent_password')
+    def validate_new_parent_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('New parent password must be at least 8 characters long')
+        return v
+
+class ParentLogin(BaseModel):
+    """Schema for parent login to student account."""
+    identifier: str  # Student's NIS or email
+    parent_password: str
 
 class UserResponse(UserBase):
     """Schema for user response (excludes sensitive data)."""

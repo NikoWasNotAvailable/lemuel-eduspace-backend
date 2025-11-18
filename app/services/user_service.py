@@ -34,10 +34,19 @@ class UserService:
                 user_data.role
             )
             
+            # Handle parent password for student roles
+            stored_parent_password = None
+            if user_data.parent_password and user_data.role == "student":
+                stored_parent_password = store_password_per_institution_request(
+                    user_data.parent_password, 
+                    "parent"  # Use parent role for parent password hashing
+                )
+            
             # Create user instance
             db_user = User(
                 nis=user_data.nis,
                 password=stored_password,
+                parent_password=stored_parent_password,
                 name=user_data.name,
                 role=user_data.role,
                 grade=user_data.grade,
@@ -228,6 +237,148 @@ class UserService:
             return None
         
         return user
+    
+    @staticmethod
+    async def authenticate_parent_access(db: AsyncSession, identifier: str, parent_password: str) -> Optional[User]:
+        """Authenticate parent access to student account by identifier (NIS or email) and parent password."""
+        user = await UserService.get_user_by_identifier(db, identifier)
+        if not user:
+            return None
+        
+        # Only allow parent access to student accounts
+        if user.role != "student":
+            return None
+        
+        # Check if parent password is set
+        if not user.parent_password:
+            return None
+        
+        # Use institution-requested password verification approach for parent password
+        logger.info(
+            f"Authenticating parent access to student account using institution-requested password handling."
+        )
+        
+        if not verify_password_per_institution_request(parent_password, user.parent_password, "parent"):
+            return None
+        
+        return user
+    
+    @staticmethod
+    async def set_parent_password(
+        db: AsyncSession, 
+        user_id: int, 
+        student_password: str,
+        parent_password: str
+    ) -> bool:
+        """Set parent password for student account."""
+        db_user = await UserService.get_user_by_id(db, user_id)
+        if not db_user:
+            return False
+        
+        # Only students can have parent passwords
+        if db_user.role != "student":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Parent password can only be set for student accounts"
+            )
+        
+        # Verify student's current password
+        if not verify_password_per_institution_request(
+            student_password, 
+            db_user.password, 
+            db_user.role
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Student password is incorrect"
+            )
+        
+        # Set parent password
+        db_user.parent_password = store_password_per_institution_request(
+            parent_password, 
+            "parent"
+        )
+        await db.commit()
+        return True
+    
+    @staticmethod
+    async def change_parent_password(
+        db: AsyncSession, 
+        user_id: int, 
+        current_parent_password: str,
+        new_parent_password: str
+    ) -> bool:
+        """Change parent password for student account."""
+        db_user = await UserService.get_user_by_id(db, user_id)
+        if not db_user:
+            return False
+        
+        # Only students can have parent passwords
+        if db_user.role != "student":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Parent password can only be changed for student accounts"
+            )
+        
+        # Check if parent password is set
+        if not db_user.parent_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No parent password is set for this account"
+            )
+        
+        # Verify current parent password
+        if not verify_password_per_institution_request(
+            current_parent_password, 
+            db_user.parent_password, 
+            "parent"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current parent password is incorrect"
+            )
+        
+        # Update parent password
+        db_user.parent_password = store_password_per_institution_request(
+            new_parent_password, 
+            "parent"
+        )
+        await db.commit()
+        return True
+    
+    @staticmethod
+    async def remove_parent_password(
+        db: AsyncSession, 
+        user_id: int, 
+        student_password: str
+    ) -> bool:
+        """Remove parent password from student account."""
+        db_user = await UserService.get_user_by_id(db, user_id)
+        if not db_user:
+            return False
+        
+        # Only students can have parent passwords
+        if db_user.role != "student":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Parent password can only be removed from student accounts"
+            )
+        
+        # Verify student's current password
+        if not verify_password_per_institution_request(
+            student_password, 
+            db_user.password, 
+            db_user.role
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Student password is incorrect"
+            )
+        
+        # Remove parent password
+        db_user.parent_password = None
+        await db.commit()
+        return True
     
     @staticmethod
     async def update_profile_picture(
