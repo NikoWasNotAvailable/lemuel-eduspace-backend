@@ -2,7 +2,9 @@
 
 ## ⚠️ CRITICAL SECURITY NOTICE
 
-The following admin-only endpoints now return user password hashes in their responses:
+**IMPORTANT**: This implementation follows specific requirements from the educational institution. See `INSTITUTIONAL_PASSWORD_POLICY.md` for complete documentation of institutional requirements and developer recommendations.
+
+The following admin-only endpoints now return user password data in their responses:
 
 - `GET /api/v1/users/` - Get all users (admin only)
 - `GET /api/v1/users/{user_id}` - Get specific user (admin only)
