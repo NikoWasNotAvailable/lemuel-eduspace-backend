@@ -2,6 +2,7 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 import logging
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserChangePassword
@@ -52,7 +53,7 @@ class UserService:
                 grade=user_data.grade,
                 gender=user_data.gender,
                 email=user_data.email,
-                region=user_data.region,
+                region_id=user_data.region_id,
                 dob=user_data.dob,
                 birth_place=user_data.birth_place,
                 address=user_data.address,
@@ -86,26 +87,40 @@ class UserService:
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[User]:
         """Get user by ID."""
-        result = await db.execute(select(User).where(User.id == user_id))
+        result = await db.execute(
+            select(User)
+            .options(joinedload(User.region))
+            .where(User.id == user_id)
+        )
         return result.scalar_one_or_none()
     
     @staticmethod
     async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
         """Get user by email."""
-        result = await db.execute(select(User).where(User.email == email))
+        result = await db.execute(
+            select(User)
+            .options(joinedload(User.region))
+            .where(User.email == email)
+        )
         return result.scalar_one_or_none()
     
     @staticmethod
     async def get_user_by_nis(db: AsyncSession, nis: str) -> Optional[User]:
         """Get user by NIS."""
-        result = await db.execute(select(User).where(User.nis == nis))
+        result = await db.execute(
+            select(User)
+            .options(joinedload(User.region))
+            .where(User.nis == nis)
+        )
         return result.scalar_one_or_none()
     
     @staticmethod
     async def get_user_by_identifier(db: AsyncSession, identifier: str) -> Optional[User]:
         """Get user by NIS or email."""
         result = await db.execute(
-            select(User).where(
+            select(User)
+            .options(joinedload(User.region))
+            .where(
                 or_(User.nis == identifier, User.email == identifier)
             )
         )
@@ -121,7 +136,7 @@ class UserService:
         status: Optional[str] = None
     ) -> List[User]:
         """Get list of users with filters."""
-        query = select(User)
+        query = select(User).options(joinedload(User.region))
         
         # Apply filters
         if role:

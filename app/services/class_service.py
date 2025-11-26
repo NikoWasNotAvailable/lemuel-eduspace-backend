@@ -15,7 +15,8 @@ class ClassService:
         try:
             # Create class instance
             db_class = ClassModel(
-                name=class_data.name
+                name=class_data.name,
+                region_id=class_data.region_id
             )
             
             db.add(db_class)

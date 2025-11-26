@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, Date, DateTime, func, Text
+from sqlalchemy import Column, Integer, String, Enum, Date, DateTime, func, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
@@ -54,7 +54,7 @@ class User(Base):
     grade = Column(Enum(UserGrade), nullable=True)
     gender = Column(Enum(UserGender), nullable=True)
     email = Column(String(100), unique=True, index=True, nullable=True)
-    region = Column(String(100), nullable=True)
+    region_id = Column(Integer, ForeignKey("regions.id"), nullable=True)
     dob = Column(Date, nullable=True)
     birth_place = Column(String(100), nullable=True)  # Tempat lahir
     address = Column(Text, nullable=True)  # Alamat lengkap
@@ -71,6 +71,9 @@ class User(Base):
     
     # Relationship to teacher_subjects
     teacher_subjects = relationship("TeacherSubject", back_populates="teacher", cascade="all, delete-orphan")
+    
+    # Relationship to region
+    region = relationship("Region", back_populates="users")
     
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', role='{self.role}')>"

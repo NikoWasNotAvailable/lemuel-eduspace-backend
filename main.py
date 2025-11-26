@@ -11,6 +11,7 @@ from app.controllers.notification_controller import router as notification_route
 from app.controllers.user_notification_controller import router as user_notification_router
 from app.controllers.session_controller import router as session_router
 from app.controllers.session_attachment_controller import router as session_attachment_router
+from app.controllers.region_controller import router as region_router
 
 # Create FastAPI instance
 app = FastAPI(
@@ -39,6 +40,7 @@ app.include_router(notification_router, prefix="/api/v1")
 app.include_router(user_notification_router, prefix="/api/v1")
 app.include_router(session_router, prefix="/api/v1")
 app.include_router(session_attachment_router, prefix="/api/v1")
+app.include_router(region_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

@@ -9,6 +9,7 @@ from .user_notification import UserNotification
 from .session import Session
 from .session_attachment import SessionAttachment
 from .admin_login_log import AdminLoginLog
+from .region import Region
 
 # Export all models for easier imports
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "UserNotification",
     "Session",
     "SessionAttachment",
-    "AdminLoginLog"
+    "AdminLoginLog",
+    "Region"
 ]

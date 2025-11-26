@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, validator
-from typing import Optional
+from pydantic import BaseModel, EmailStr, validator, Field
+from typing import Optional, Union
 from datetime import date, datetime
 from app.models.user import UserRole, UserGrade, UserGender, UserReligion, UserStatus
+from app.schemas.region import RegionResponse
 
 class UserBase(BaseModel):
     """Base User schema with common fields."""
@@ -11,7 +12,7 @@ class UserBase(BaseModel):
     grade: Optional[UserGrade] = None
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
-    region: Optional[str] = None
+    region_id: Optional[int] = None
     dob: Optional[date] = None
     birth_place: Optional[str] = None
     address: Optional[str] = None
@@ -53,7 +54,7 @@ class PublicUserCreate(BaseModel):
     grade: Optional[UserGrade] = None
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
-    region: Optional[str] = None
+    region_id: Optional[int] = None
     dob: Optional[date] = None
     birth_place: Optional[str] = None
     address: Optional[str] = None
@@ -80,7 +81,7 @@ class UserUpdate(BaseModel):
     grade: Optional[UserGrade] = None
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
-    region: Optional[str] = None
+    region_id: Optional[int] = None
     dob: Optional[date] = None
     birth_place: Optional[str] = None
     address: Optional[str] = None
@@ -132,7 +133,14 @@ class UserResponse(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    region: Optional[str] = None
     
+    @validator('region', pre=True)
+    def extract_region_name(cls, v):
+        if v and hasattr(v, 'name'):
+            return v.name
+        return v
+
     class Config:
         from_attributes = True
 
@@ -142,6 +150,13 @@ class AdminUserResponse(UserBase):
     password: str  # WARNING: This includes the hashed password - only for admin use
     created_at: datetime
     updated_at: datetime
+    region: Optional[str] = None
+    
+    @validator('region', pre=True)
+    def extract_region_name(cls, v):
+        if v and hasattr(v, 'name'):
+            return v.name
+        return v
     
     class Config:
         from_attributes = True

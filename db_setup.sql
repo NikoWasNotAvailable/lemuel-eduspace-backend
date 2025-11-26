@@ -1,3 +1,11 @@
+CREATE TABLE `regions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL UNIQUE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `nis` VARCHAR(50) UNIQUE,                                -- Nomor Induk Siswa (jika siswa)
@@ -8,7 +16,7 @@ CREATE TABLE `users` (
   `grade` ENUM('TKA', 'TKB', 'SD1', 'SD2', 'SD3', 'SD4', 'SD5', 'SD6', 'SMP1', 'SMP2', 'SMP3') DEFAULT NULL,
   `gender` ENUM('male', 'female') DEFAULT NULL,
   `email` VARCHAR(100) UNIQUE,
-  `region` VARCHAR(100) DEFAULT NULL,
+  `region_id` INT DEFAULT NULL,
   `dob` DATE DEFAULT NULL,
   `birth_place` VARCHAR(100) DEFAULT NULL,                 -- Tempat lahir
   `address` TEXT DEFAULT NULL,                             -- Alamat lengkap
@@ -16,7 +24,8 @@ CREATE TABLE `users` (
   `status` ENUM('active', 'inactive', 'suspended') DEFAULT 'active',  -- Status pengguna
   `profile_picture` VARCHAR(500) DEFAULT NULL,             -- Path to profile picture file
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -25,7 +34,9 @@ COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `classes` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `region_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4

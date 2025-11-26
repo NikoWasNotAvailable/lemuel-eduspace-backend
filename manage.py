@@ -133,7 +133,8 @@ class AdminManager:
                     religion=religion,
                     birth_place=birth_place,
                     address=address,
-                    status=UserStatus.active
+                    status=UserStatus.active,
+                    region_id=None  # Can be set later if needed
                 )
                 
                 admin_user = await UserService.create_user(db, user_data)
@@ -177,7 +178,8 @@ class AdminManager:
                     email="admin@eduspace.com",
                     password=default_password,
                     role=UserRole.admin,
-                    status=UserStatus.active
+                    status=UserStatus.active,
+                    region_id=None  # Can be set later if needed
                 )
                 
                 admin_user = await UserService.create_user(db, user_data)

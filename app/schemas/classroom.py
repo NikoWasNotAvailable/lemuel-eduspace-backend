@@ -5,6 +5,7 @@ from datetime import datetime
 class ClassBase(BaseModel):
     """Base Class schema with common fields."""
     name: str
+    region_id: Optional[int] = None
     
     @validator('name')
     def validate_name(cls, v):
@@ -19,6 +20,7 @@ class ClassCreate(ClassBase):
 class ClassUpdate(BaseModel):
     """Schema for updating class information."""
     name: Optional[str] = None
+    region_id: Optional[int] = None
     
     @validator('name')
     def validate_name(cls, v):
