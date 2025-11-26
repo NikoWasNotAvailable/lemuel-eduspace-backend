@@ -98,3 +98,10 @@ class ClassService:
         query = select(ClassModel).where(ClassModel.name.contains(search_term)).order_by(ClassModel.name)
         result = await db.execute(query)
         return result.scalars().all()
+    
+    @staticmethod
+    async def get_classes_by_region(db: AsyncSession, region_id: int, skip: int = 0, limit: int = 100) -> List[ClassModel]:
+        """Get classes by region ID."""
+        query = select(ClassModel).where(ClassModel.region_id == region_id).offset(skip).limit(limit).order_by(ClassModel.name)
+        result = await db.execute(query)
+        return result.scalars().all()

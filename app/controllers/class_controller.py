@@ -48,6 +48,18 @@ async def search_classes(
     classes = await ClassService.search_classes(db, q)
     return [ClassResponse.model_validate(class_obj) for class_obj in classes]
 
+@router.get("/by-region/{region_id}", response_model=List[ClassResponse])
+async def get_classes_by_region(
+    region_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get classes by region ID."""
+    classes = await ClassService.get_classes_by_region(db, region_id, skip=skip, limit=limit)
+    return [ClassResponse.model_validate(class_obj) for class_obj in classes]
+
 @router.get("/{class_id}", response_model=ClassResponse)
 async def get_class_by_id(
     class_id: int,
