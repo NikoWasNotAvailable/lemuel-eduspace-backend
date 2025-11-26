@@ -1,12 +1,20 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func, BigInteger
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func, BigInteger, Enum
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+import enum
+
+class AttachmentType(str, enum.Enum):
+    material = "material"
+    assignment = "assignment"
+    other = "other"
 
 class SessionAttachment(Base):
     __tablename__ = "session_attachments"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=True)
+    type = Column(Enum(AttachmentType), default=AttachmentType.material, nullable=False)
     filename = Column(String(255), nullable=False)  # Original filename
     file_path = Column(String(500), nullable=False)  # Path where file is stored
     file_size = Column(BigInteger, nullable=False)  # File size in bytes

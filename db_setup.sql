@@ -103,6 +103,38 @@ DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `sessions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `subject_id` INT NOT NULL,
+  `session_no` INT NOT NULL,
+  `date` DATE NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE,
+  UNIQUE KEY `unique_subject_session_no` (`subject_id`, `session_no`)
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `session_attachments` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `session_id` INT NOT NULL,
+  `name` VARCHAR(255) DEFAULT NULL,
+  `type` ENUM('material', 'assignment', 'other') DEFAULT 'material',
+  `filename` VARCHAR(255) NOT NULL,
+  `file_path` VARCHAR(500) NOT NULL,
+  `file_size` BIGINT NOT NULL,
+  `content_type` VARCHAR(100) NOT NULL,
+  `uploaded_by` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`session_id`) REFERENCES `sessions`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `admin_login_logs` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `admin_user_id` INT NOT NULL,                       -- FK ke tabel users

@@ -1,11 +1,19 @@
 from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
+from enum import Enum
+
+class AttachmentType(str, Enum):
+    material = "material"
+    assignment = "assignment"
+    other = "other"
 
 # Base schemas
 class SessionAttachmentBase(BaseModel):
     filename: str
     content_type: str
+    name: Optional[str] = None
+    type: AttachmentType = AttachmentType.material
 
 class SessionAttachmentCreate(SessionAttachmentBase):
     session_id: int
@@ -40,6 +48,8 @@ class SessionAttachmentCreate(SessionAttachmentBase):
 
 class SessionAttachmentUpdate(BaseModel):
     filename: Optional[str] = None
+    name: Optional[str] = None
+    type: Optional[AttachmentType] = None
     
     @validator('filename')
     def validate_filename(cls, v):

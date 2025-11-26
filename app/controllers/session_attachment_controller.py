@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
@@ -13,14 +13,17 @@ from app.schemas.session_attachment import (
     SessionAttachmentWithUploaderResponse,
     SessionAttachmentListResponse,
     SessionAttachmentUpdate,
-    FileUploadResponse
+    FileUploadResponse,
+    AttachmentType
 )
 
 router = APIRouter(prefix="/session-attachments", tags=["session-attachments"])
 
 @router.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_attachment(
-    session_id: int = Query(..., description="Session ID to attach file to"),
+    session_id: int = Form(..., description="Session ID to attach file to"),
+    name: Optional[str] = Form(None, description="Display name for the attachment"),
+    type: AttachmentType = Form(AttachmentType.material, description="Type of attachment"),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(require_roles([UserRole.admin, UserRole.teacher]))
@@ -28,7 +31,7 @@ async def upload_attachment(
     """Upload a file attachment for a session. Only admin and teachers can upload files."""
     try:
         attachment = await SessionAttachmentService.upload_file(
-            db, file, session_id, current_user.id
+            db, file, session_id, current_user.id, name, type
         )
         
         return FileUploadResponse(
@@ -209,7 +212,8 @@ async def delete_attachment(
 
 @router.post("/bulk-upload", response_model=List[FileUploadResponse])
 async def bulk_upload_attachments(
-    session_id: int = Query(..., description="Session ID to attach files to"),
+    session_id: int = Form(..., description="Session ID to attach files to"),
+    type: AttachmentType = Form(AttachmentType.material, description="Type of attachment for all files"),
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(require_roles([UserRole.admin, UserRole.teacher]))
@@ -225,8 +229,9 @@ async def bulk_upload_attachments(
     
     for file in files:
         try:
+            # For bulk upload, we use filename as name or leave it empty to default to filename in service
             attachment = await SessionAttachmentService.upload_file(
-                db, file, session_id, current_user.id
+                db, file, session_id, current_user.id, None, type
             )
             
             results.append(FileUploadResponse(

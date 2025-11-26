@@ -50,7 +50,9 @@ class SessionAttachmentService:
         db: AsyncSession,
         file: UploadFile,
         session_id: int,
-        uploaded_by: int
+        uploaded_by: int,
+        name: Optional[str] = None,
+        attachment_type: str = "material"
     ) -> SessionAttachment:
         """Upload and save file for a session."""
         # Check if session exists
@@ -119,7 +121,9 @@ class SessionAttachmentService:
                 file_path=file_path,
                 file_size=file_size,
                 content_type=file.content_type or "application/octet-stream",
-                uploaded_by=uploaded_by
+                uploaded_by=uploaded_by,
+                name=name if name else file.filename,
+                type=attachment_type
             )
             
             attachment = SessionAttachment(**attachment_data.model_dump())
