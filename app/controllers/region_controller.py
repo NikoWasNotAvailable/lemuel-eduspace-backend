@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
+from app.core.database import get_async_db
 from app.core.auth import get_admin_user
 from app.schemas.region import RegionCreate, RegionResponse, RegionUpdate
 from app.services.region_service import RegionService
@@ -15,7 +15,7 @@ router = APIRouter(
 @router.post("/", response_model=RegionResponse, status_code=status.HTTP_201_CREATED)
 async def create_region(
     region: RegionCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
     """
@@ -28,7 +28,7 @@ async def create_region(
 async def read_regions(
     skip: int = 0,
     limit: int = 100,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     # current_user: User = Depends(get_current_active_user) # Assuming authenticated users can read regions
 ):
     """
@@ -39,7 +39,7 @@ async def read_regions(
 @router.get("/{region_id}", response_model=RegionResponse)
 async def read_region(
     region_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     # current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -57,7 +57,7 @@ async def read_region(
 async def update_region(
     region_id: int,
     region_update: RegionUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
     """
@@ -75,7 +75,7 @@ async def update_region(
 @router.delete("/{region_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_region(
     region_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
     """
