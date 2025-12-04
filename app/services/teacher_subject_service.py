@@ -147,6 +147,7 @@ class TeacherSubjectService:
         result = await db.execute(
             select(TeacherSubject)
             .options(
+                selectinload(TeacherSubject.teacher),
                 selectinload(TeacherSubject.subject).selectinload(Subject.class_obj)
             )
             .where(TeacherSubject.teacher_id == teacher_id)
@@ -158,7 +159,10 @@ class TeacherSubjectService:
         """Get all teachers assigned to a subject."""
         result = await db.execute(
             select(TeacherSubject)
-            .options(selectinload(TeacherSubject.teacher))
+            .options(
+                selectinload(TeacherSubject.teacher),
+                selectinload(TeacherSubject.subject).selectinload(Subject.class_obj)
+            )
             .where(TeacherSubject.subject_id == subject_id)
         )
         return result.scalars().all()
