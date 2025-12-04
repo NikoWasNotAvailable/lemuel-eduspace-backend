@@ -8,6 +8,7 @@ class Session(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     subject_id = Column(Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
     session_no = Column(Integer, nullable=False)  # Session number (1, 2, 3, etc.)
+    name = Column(String(255), nullable=False)
     date = Column(Date, nullable=False)  # Session date
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False)

@@ -6,6 +6,7 @@ from datetime import datetime, date as DateType
 class SessionBase(BaseModel):
     subject_id: int
     session_no: int
+    name: str
     date: DateType
 
 class SessionCreate(SessionBase):
@@ -31,6 +32,7 @@ class SessionCreate(SessionBase):
 class SessionUpdate(BaseModel):
     subject_id: Optional[int] = None
     session_no: Optional[int] = None
+    name: Optional[str] = None
     date: Optional[DateType] = None
     
     @validator('subject_id')

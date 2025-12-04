@@ -28,6 +28,7 @@ class SessionService:
             session = Session(
                 subject_id=session_data.subject_id,
                 session_no=session_data.session_no,
+                name=session_data.name,
                 date=session_data.date
             )
             

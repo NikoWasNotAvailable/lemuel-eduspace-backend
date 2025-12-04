@@ -107,6 +107,7 @@ CREATE TABLE `sessions` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `subject_id` INT NOT NULL,
   `session_no` INT NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
   `date` DATE NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -137,7 +138,7 @@ COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `admin_login_logs` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `admin_user_id` INT NOT NULL,                       -- FK ke tabel users
+  `admin_user_id` INT NOT NULL,                        -- FK ke tabel users
   `admin_name` VARCHAR(100) NOT NULL,                 -- Nama admin yang login
   `admin_email` VARCHAR(100) NOT NULL,                -- Email admin yang login
   `login_time` DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,  -- Waktu login
