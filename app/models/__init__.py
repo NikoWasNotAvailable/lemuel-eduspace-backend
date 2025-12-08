@@ -3,7 +3,6 @@ from .user import User
 from .classroom import ClassModel
 from .subject import Subject
 from .teacher_subject import TeacherSubject
-from .student_class import StudentClass
 from .notification import Notification
 from .user_notification import UserNotification
 from .session import Session
@@ -17,7 +16,6 @@ __all__ = [
     "ClassModel", 
     "Subject",
     "TeacherSubject",
-    "StudentClass",
     "Notification",
     "UserNotification",
     "Session",

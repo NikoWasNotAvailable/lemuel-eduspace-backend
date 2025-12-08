@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
     region_id: Optional[int] = None
+    class_id: Optional[int] = None
     dob: Optional[date] = None
     birth_place: Optional[str] = None
     address: Optional[str] = None
@@ -55,6 +56,7 @@ class PublicUserCreate(BaseModel):
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
     region_id: Optional[int] = None
+    class_id: Optional[int] = None
     dob: Optional[date] = None
     birth_place: Optional[str] = None
     address: Optional[str] = None
@@ -82,6 +84,7 @@ class UserUpdate(BaseModel):
     gender: Optional[UserGender] = None
     email: Optional[EmailStr] = None
     region_id: Optional[int] = None
+    class_id: Optional[int] = None
     dob: Optional[date] = None
     birth_place: Optional[str] = None
     address: Optional[str] = None
@@ -134,11 +137,18 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
     region: Optional[str] = None
+    class_name: Optional[str] = None
     
     @validator('region', pre=True)
     def extract_region_name(cls, v):
         if v and hasattr(v, 'name'):
             return v.name
+        return v
+    
+    @validator('class_name', pre=True, always=True)
+    def extract_class_name(cls, v, values):
+        # This validator extracts class name from the ORM object if present
+        # Note: This won't work directly from values, needs to be set in service layer
         return v
 
     class Config:
@@ -151,11 +161,17 @@ class AdminUserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
     region: Optional[str] = None
+    class_name: Optional[str] = None
     
     @validator('region', pre=True)
     def extract_region_name(cls, v):
         if v and hasattr(v, 'name'):
             return v.name
+        return v
+    
+    @validator('class_name', pre=True, always=True)
+    def extract_class_name(cls, v, values):
+        # This validator extracts class name from the ORM object if present
         return v
     
     class Config:

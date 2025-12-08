@@ -54,6 +54,7 @@ class UserService:
                 gender=user_data.gender,
                 email=user_data.email,
                 region_id=user_data.region_id,
+                class_id=user_data.class_id,
                 dob=user_data.dob,
                 birth_place=user_data.birth_place,
                 address=user_data.address,
@@ -89,7 +90,7 @@ class UserService:
         """Get user by ID."""
         result = await db.execute(
             select(User)
-            .options(joinedload(User.region))
+            .options(joinedload(User.region), joinedload(User.class_obj))
             .where(User.id == user_id)
         )
         return result.scalar_one_or_none()
@@ -99,7 +100,7 @@ class UserService:
         """Get user by email."""
         result = await db.execute(
             select(User)
-            .options(joinedload(User.region))
+            .options(joinedload(User.region), joinedload(User.class_obj))
             .where(User.email == email)
         )
         return result.scalar_one_or_none()
@@ -109,7 +110,7 @@ class UserService:
         """Get user by NIS."""
         result = await db.execute(
             select(User)
-            .options(joinedload(User.region))
+            .options(joinedload(User.region), joinedload(User.class_obj))
             .where(User.nis == nis)
         )
         return result.scalar_one_or_none()
@@ -119,7 +120,7 @@ class UserService:
         """Get user by NIS or email."""
         result = await db.execute(
             select(User)
-            .options(joinedload(User.region))
+            .options(joinedload(User.region), joinedload(User.class_obj))
             .where(
                 or_(User.nis == identifier, User.email == identifier)
             )
@@ -136,7 +137,7 @@ class UserService:
         status: Optional[str] = None
     ) -> List[User]:
         """Get list of users with filters."""
-        query = select(User).options(joinedload(User.region))
+        query = select(User).options(joinedload(User.region), joinedload(User.class_obj))
         
         # Apply filters
         if role:

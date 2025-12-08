@@ -17,6 +17,7 @@ CREATE TABLE `users` (
   `gender` ENUM('male', 'female') DEFAULT NULL,
   `email` VARCHAR(100) UNIQUE,
   `region_id` INT DEFAULT NULL,
+  `class_id` INT DEFAULT NULL,
   `dob` DATE DEFAULT NULL,
   `birth_place` VARCHAR(100) DEFAULT NULL,                 -- Tempat lahir
   `address` TEXT DEFAULT NULL,                             -- Alamat lengkap
@@ -25,7 +26,8 @@ CREATE TABLE `users` (
   `profile_picture` VARCHAR(500) DEFAULT NULL,             -- Path to profile picture file
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -60,18 +62,6 @@ CREATE TABLE `teacher_subjects` (
   FOREIGN KEY (`teacher_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE,
   UNIQUE KEY `unique_teacher_subject` (`teacher_id`, `subject_id`)
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `student_classes` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `student_id` INT NOT NULL,
-  `class_id` INT NOT NULL,
-  FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`) ON DELETE CASCADE,
-  UNIQUE KEY `student_class_unique` (`student_id`, `class_id`)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4

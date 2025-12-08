@@ -304,7 +304,15 @@ async def get_users(
     )
     
     users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status)
-    return [AdminUserResponse.model_validate(user) for user in users]
+    
+    # Transform users to include class_name
+    result = []
+    for user in users:
+        user_dict = AdminUserResponse.model_validate(user).model_dump()
+        user_dict['class_name'] = user.class_obj.name if user.class_obj else None
+        result.append(AdminUserResponse(**user_dict))
+    
+    return result
 
 @router.get("/{user_id}", response_model=AdminUserResponse)
 async def get_user_by_id(
@@ -335,7 +343,11 @@ async def get_user_by_id(
         f"This operation was requested by the institution."
     )
     
-    return AdminUserResponse.model_validate(user)
+    # Transform to include class_name
+    user_dict = AdminUserResponse.model_validate(user).model_dump()
+    user_dict['class_name'] = user.class_obj.name if user.class_obj else None
+    
+    return AdminUserResponse(**user_dict)
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user_by_id(

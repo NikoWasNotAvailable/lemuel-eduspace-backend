@@ -55,6 +55,7 @@ class User(Base):
     gender = Column(Enum(UserGender), nullable=True)
     email = Column(String(100), unique=True, index=True, nullable=True)
     region_id = Column(Integer, ForeignKey("regions.id"), nullable=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
     dob = Column(Date, nullable=True)
     birth_place = Column(String(100), nullable=True)  # Tempat lahir
     address = Column(Text, nullable=True)  # Alamat lengkap
@@ -74,6 +75,9 @@ class User(Base):
     
     # Relationship to region
     region = relationship("Region", back_populates="users")
+    
+    # Relationship to class (for students)
+    class_obj = relationship("ClassModel", foreign_keys=[class_id])
     
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', role='{self.role}')>"
