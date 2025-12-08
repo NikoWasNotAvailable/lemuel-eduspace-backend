@@ -151,6 +151,7 @@ instance/
 # Database files
 *.sqlite
 *.sqlite3
+uploads/
 
 # Logs
 logs/
