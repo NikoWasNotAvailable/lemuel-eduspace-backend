@@ -16,7 +16,8 @@ class NotificationService:
             description=notification_data.description,
             type=notification_data.type,
             nominal=notification_data.nominal,
-            date=notification_data.date
+            date=notification_data.date,
+            is_scheduled=notification_data.is_scheduled
         )
         
         db.add(notification)
@@ -38,7 +39,8 @@ class NotificationService:
                 description=notification_data.description,
                 type=notification_data.type,
                 nominal=notification_data.nominal,
-                date=notification_data.date
+                date=notification_data.date,
+                is_scheduled=notification_data.is_scheduled
             )
             notifications.append(notification)
         
@@ -71,8 +73,8 @@ class NotificationService:
         
         if search:
             search_filter = Notification.title.ilike(f"%{search}%")
-            if True:  # Always include subject in search
-                search_filter = search_filter | Notification.subject.ilike(f"%{search}%")
+            if True:  # Always include description in search
+                search_filter = search_filter | Notification.description.ilike(f"%{search}%")
             query = query.where(search_filter)
             count_query = count_query.where(search_filter)
         
@@ -127,6 +129,8 @@ class NotificationService:
             update_data["nominal"] = notification_update.nominal
         if notification_update.date is not None:
             update_data["date"] = notification_update.date
+        if notification_update.is_scheduled is not None:
+            update_data["is_scheduled"] = notification_update.is_scheduled
         
         if not update_data:
             return notification  # No changes to make
@@ -241,10 +245,10 @@ class NotificationService:
         search_term: str,
         limit: int = 50
     ) -> List[Notification]:
-        """Search notifications by title and subject."""
+        """Search notifications by title and description."""
         query = select(Notification).where(
             Notification.title.ilike(f"%{search_term}%") |
-            Notification.subject.ilike(f"%{search_term}%")
+            Notification.description.ilike(f"%{search_term}%")
         ).order_by(desc(Notification.created_at)).limit(limit)
         
         result = await db.execute(query)

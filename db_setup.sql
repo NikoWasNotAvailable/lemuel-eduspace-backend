@@ -70,8 +70,9 @@ COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `notifications` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `title` VARCHAR(255) NOT NULL,
-  `subject` TEXT DEFAULT NULL,
+  `description` TEXT DEFAULT NULL,
   `type` ENUM('general', 'announcement', 'assignment', 'event', 'payment') DEFAULT 'general',
+  `is_scheduled` BOOLEAN DEFAULT FALSE,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 ENGINE=InnoDB

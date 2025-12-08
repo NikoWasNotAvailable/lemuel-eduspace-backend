@@ -51,7 +51,7 @@ async def get_notifications(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     type: Optional[NotificationType] = Query(None, description="Filter by notification type"),
-    search: Optional[str] = Query(None, description="Search in title and subject"),
+    search: Optional[str] = Query(None, description="Search in title and description"),
     start_date: Optional[datetime] = Query(None, description="Filter from this date"),
     end_date: Optional[datetime] = Query(None, description="Filter to this date"),
     db: AsyncSession = Depends(get_async_db),
@@ -103,7 +103,7 @@ async def search_notifications(
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Search notifications by title and subject."""
+    """Search notifications by title and description."""
     notifications = await NotificationService.search_notifications(db, q, limit)
     return [NotificationResponse.model_validate(notif) for notif in notifications]
 

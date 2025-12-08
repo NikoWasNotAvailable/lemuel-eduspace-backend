@@ -207,6 +207,126 @@ class UserNotificationService:
         return assignments, len(existing_assignment_user_ids)
     
     @staticmethod
+    async def assign_notification_by_region(
+        db: AsyncSession,
+        notification_id: int,
+        region_id: int
+    ) -> Tuple[List[UserNotification], int]:
+        """Assign a notification to all users in a specific region."""
+        # Check if notification exists
+        notification_query = select(Notification).where(Notification.id == notification_id)
+        notification_result = await db.execute(notification_query)
+        notification = notification_result.scalar_one_or_none()
+        
+        if not notification:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Notification not found"
+            )
+        
+        # Get all users in the region
+        users_query = select(User).where(User.region_id == region_id)
+        users_result = await db.execute(users_query)
+        users = users_result.scalars().all()
+        
+        if not users:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No users found in region {region_id}"
+            )
+        
+        user_ids = [user.id for user in users]
+        
+        # Check existing assignments
+        existing_assignments_query = select(UserNotification).where(
+            and_(
+                UserNotification.notification_id == notification_id,
+                UserNotification.user_id.in_(user_ids)
+            )
+        )
+        existing_assignments_result = await db.execute(existing_assignments_query)
+        existing_assignments = existing_assignments_result.scalars().all()
+        existing_assignment_user_ids = [assign.user_id for assign in existing_assignments]
+        
+        # Create only new assignments
+        new_user_ids = set(user_ids) - set(existing_assignment_user_ids)
+        
+        assignments = []
+        for user_id in new_user_ids:
+            assignment = UserNotification(
+                user_id=user_id,
+                notification_id=notification_id
+            )
+            db.add(assignment)
+            assignments.append(assignment)
+        
+        await db.commit()
+        for assignment in assignments:
+            await db.refresh(assignment)
+        
+        return assignments, len(existing_assignment_user_ids)
+    
+    @staticmethod
+    async def assign_notification_by_class(
+        db: AsyncSession,
+        notification_id: int,
+        class_id: int
+    ) -> Tuple[List[UserNotification], int]:
+        """Assign a notification to all students in a specific class."""
+        # Check if notification exists
+        notification_query = select(Notification).where(Notification.id == notification_id)
+        notification_result = await db.execute(notification_query)
+        notification = notification_result.scalar_one_or_none()
+        
+        if not notification:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Notification not found"
+            )
+        
+        # Get all students in the class
+        users_query = select(User).where(User.class_id == class_id)
+        users_result = await db.execute(users_query)
+        users = users_result.scalars().all()
+        
+        if not users:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No students found in class {class_id}"
+            )
+        
+        user_ids = [user.id for user in users]
+        
+        # Check existing assignments
+        existing_assignments_query = select(UserNotification).where(
+            and_(
+                UserNotification.notification_id == notification_id,
+                UserNotification.user_id.in_(user_ids)
+            )
+        )
+        existing_assignments_result = await db.execute(existing_assignments_query)
+        existing_assignments = existing_assignments_result.scalars().all()
+        existing_assignment_user_ids = [assign.user_id for assign in existing_assignments]
+        
+        # Create only new assignments
+        new_user_ids = set(user_ids) - set(existing_assignment_user_ids)
+        
+        assignments = []
+        for user_id in new_user_ids:
+            assignment = UserNotification(
+                user_id=user_id,
+                notification_id=notification_id
+            )
+            db.add(assignment)
+            assignments.append(assignment)
+        
+        await db.commit()
+        for assignment in assignments:
+            await db.refresh(assignment)
+        
+        return assignments, len(existing_assignment_user_ids)
+    
+    @staticmethod
     async def get_user_notifications(
         db: AsyncSession,
         user_id: int,

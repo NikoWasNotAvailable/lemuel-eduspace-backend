@@ -11,6 +11,7 @@ class NotificationBase(BaseModel):
     type: NotificationType = NotificationType.general
     nominal: Optional[Decimal] = None  # Optional, for payment notifications
     date: Optional[datetime] = None  # Optional, for events and assignments
+    is_scheduled: bool = False
 
 class NotificationCreate(NotificationBase):
     @validator('title')
@@ -52,6 +53,7 @@ class NotificationUpdate(BaseModel):
     type: Optional[NotificationType] = None
     nominal: Optional[Decimal] = None
     date: Optional[datetime] = None
+    is_scheduled: Optional[bool] = None
     
     @validator('title')
     def validate_title(cls, v):

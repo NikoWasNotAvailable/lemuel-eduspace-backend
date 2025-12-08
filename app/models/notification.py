@@ -18,6 +18,7 @@ class Notification(Base):
     type = Column(Enum(NotificationType), default=NotificationType.general, nullable=False)
     nominal = Column(DECIMAL(10, 2), nullable=True)  # Optional, for payment notifications
     date = Column(DateTime, nullable=True)  # Optional, for events and assignments
+    is_scheduled = Column(Integer, default=0, nullable=False)  # Boolean: 0 = False, 1 = True
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     
     def __repr__(self):

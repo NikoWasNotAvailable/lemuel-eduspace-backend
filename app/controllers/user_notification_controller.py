@@ -81,6 +81,46 @@ async def assign_notification_by_role(
         assignment_ids=[assignment.id for assignment in assignments]
     )
 
+@router.post("/assign-by-region/{region_id}", response_model=BulkAssignmentResponse, status_code=status.HTTP_201_CREATED)
+async def assign_notification_by_region(
+    region_id: int,
+    notification_id: int = Query(..., description="Notification ID to assign"),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_teacher_or_admin_user)
+):
+    """Assign a notification to all users in a specific region (teacher or admin)."""
+    assignments, skipped_count = await UserNotificationService.assign_notification_by_region(
+        db, notification_id, region_id
+    )
+    
+    return BulkAssignmentResponse(
+        success=True,
+        assigned_count=len(assignments),
+        skipped_count=skipped_count,
+        message=f"Assigned notification to {len(assignments)} users in region {region_id}, {skipped_count} already assigned",
+        assignment_ids=[assignment.id for assignment in assignments]
+    )
+
+@router.post("/assign-by-class/{class_id}", response_model=BulkAssignmentResponse, status_code=status.HTTP_201_CREATED)
+async def assign_notification_by_class(
+    class_id: int,
+    notification_id: int = Query(..., description="Notification ID to assign"),
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_teacher_or_admin_user)
+):
+    """Assign a notification to all students in a specific class (teacher or admin)."""
+    assignments, skipped_count = await UserNotificationService.assign_notification_by_class(
+        db, notification_id, class_id
+    )
+    
+    return BulkAssignmentResponse(
+        success=True,
+        assigned_count=len(assignments),
+        skipped_count=skipped_count,
+        message=f"Assigned notification to {len(assignments)} students in class {class_id}, {skipped_count} already assigned",
+        assignment_ids=[assignment.id for assignment in assignments]
+    )
+
 @router.get("/my-notifications", response_model=List[NotificationWithReadStatusResponse])
 async def get_my_notifications(
     page: int = Query(1, ge=1),
