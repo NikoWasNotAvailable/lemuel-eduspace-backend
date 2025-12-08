@@ -83,11 +83,21 @@ class ClassService:
     
     @staticmethod
     async def delete_class(db: AsyncSession, class_id: int) -> bool:
-        """Delete class."""
+        """Delete class. Sets class_id to NULL for all students in this class first."""
         db_class = await ClassService.get_class_by_id(db, class_id)
         if not db_class:
             return False
         
+        # First, set class_id to NULL for all users in this class
+        from app.models.user import User
+        query = select(User).where(User.class_id == class_id)
+        result = await db.execute(query)
+        users_in_class = result.scalars().all()
+        
+        for user in users_in_class:
+            user.class_id = None
+        
+        # Now delete the class
         await db.delete(db_class)
         await db.commit()
         return True
