@@ -152,6 +152,7 @@ instance/
 *.sqlite
 *.sqlite3
 uploads/
+dummy_data.sql
 
 # Logs
 logs/
