@@ -9,7 +9,7 @@ from datetime import datetime, date
 class NotificationService:
     
     @staticmethod
-    async def create_notification(db: AsyncSession, notification_data: NotificationCreate) -> Notification:
+    async def create_notification(db: AsyncSession, notification_data: NotificationCreate, created_by: Optional[int] = None) -> Notification:
         """Create a new notification."""
         notification = Notification(
             title=notification_data.title,
@@ -17,7 +17,9 @@ class NotificationService:
             type=notification_data.type,
             nominal=notification_data.nominal,
             date=notification_data.date,
-            is_scheduled=notification_data.is_scheduled
+            is_scheduled=notification_data.is_scheduled,
+            image=notification_data.image,
+            created_by=created_by
         )
         
         db.add(notification)

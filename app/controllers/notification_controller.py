@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_db
 from app.core.auth import get_current_user, get_admin_user, get_teacher_or_admin_user
@@ -16,9 +16,33 @@ from app.schemas.notification import (
 from app.models.notification import NotificationType
 from app.models.user import User
 from datetime import datetime, timedelta
+from decimal import Decimal
 import math
+import shutil
+import os
+import uuid
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+
+@router.post("/upload-image", response_model=dict)
+async def upload_notification_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_teacher_or_admin_user)
+):
+    """Upload an image for a notification."""
+    upload_dir = "uploads/notifications"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Generate unique filename
+    file_extension = os.path.splitext(file.filename)[1]
+    filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = os.path.join(upload_dir, filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Return relative path
+    return {"image_path": f"/uploads/notifications/{filename}"}
 
 @router.post("/", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
 async def create_notification(
@@ -27,7 +51,11 @@ async def create_notification(
     current_user: User = Depends(get_teacher_or_admin_user)
 ):
     """Create a new notification (teacher or admin)."""
-    notification = await NotificationService.create_notification(db, notification_data)
+    notification = await NotificationService.create_notification(
+        db, 
+        notification_data, 
+        created_by=current_user.id
+    )
     return NotificationResponse.model_validate(notification)
 
 @router.post("/bulk", response_model=BulkOperationResponse, status_code=status.HTTP_201_CREATED)

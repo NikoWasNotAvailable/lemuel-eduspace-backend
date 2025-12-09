@@ -12,6 +12,7 @@ class NotificationBase(BaseModel):
     nominal: Optional[Decimal] = None  # Optional, for payment notifications
     date: Optional[datetime] = None  # Optional, for events and assignments
     is_scheduled: bool = False
+    image: Optional[str] = None  # Path to notification image
 
 class NotificationCreate(NotificationBase):
     @validator('title')
@@ -93,6 +94,7 @@ class NotificationBulkCreate(BaseModel):
 class NotificationResponse(NotificationBase):
     id: int
     created_at: datetime
+    created_by: Optional[int] = None
     
     model_config = {"from_attributes": True}
 
