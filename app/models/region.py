@@ -11,3 +11,4 @@ class Region(Base):
     # Relationships
     users = relationship("User", back_populates="region")
     classes = relationship("ClassModel", back_populates="region")
+    banners = relationship("Banner", back_populates="region")

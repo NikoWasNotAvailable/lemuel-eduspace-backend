@@ -14,6 +14,7 @@ from app.models.notification import Notification  # Import to register the model
 from app.models.user_notification import UserNotification  # Import to register the model
 from app.models.session import Session  # Import to register the model
 from app.models.session_attachment import SessionAttachment  # Import to register the model
+from app.models.banner import Banner  # Import to register the model
 
 async def create_tables():
     """Create all tables."""

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, DECIMAL, func
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, DECIMAL, ForeignKey, func
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 import enum
 
@@ -19,7 +20,12 @@ class Notification(Base):
     nominal = Column(DECIMAL(10, 2), nullable=True)  # Optional, for payment notifications
     date = Column(DateTime, nullable=True)  # Optional, for events and assignments
     is_scheduled = Column(Integer, default=0, nullable=False)  # Boolean: 0 = False, 1 = True
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Who created this notification
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
+    
+    # Relationships
+    creator = relationship("User", foreign_keys=[created_by])
+    user_notifications = relationship("UserNotification", back_populates="notification", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Notification(id={self.id}, title='{self.title}', type='{self.type}')>"

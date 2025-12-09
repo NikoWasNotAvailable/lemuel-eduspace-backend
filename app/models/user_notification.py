@@ -13,7 +13,7 @@ class UserNotification(Base):
     
     # Relationships
     user = relationship("User", foreign_keys=[user_id])
-    notification = relationship("Notification", foreign_keys=[notification_id])
+    notification = relationship("Notification", foreign_keys=[notification_id], back_populates="user_notifications")
     
     # Unique constraint for user-notification combination
     __table_args__ = (

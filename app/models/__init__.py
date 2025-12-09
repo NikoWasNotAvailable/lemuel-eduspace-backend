@@ -9,6 +9,7 @@ from .session import Session
 from .session_attachment import SessionAttachment
 from .admin_login_log import AdminLoginLog
 from .region import Region
+from .banner import Banner
 
 # Export all models for easier imports
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "Session",
     "SessionAttachment",
     "AdminLoginLog",
-    "Region"
+    "Region",
+    "Banner"
 ]

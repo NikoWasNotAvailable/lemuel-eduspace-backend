@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from app.core.config import settings
 from app.controllers.user_controller import router as user_router
 from app.controllers.class_controller import router as class_router
@@ -11,6 +13,7 @@ from app.controllers.user_notification_controller import router as user_notifica
 from app.controllers.session_controller import router as session_router
 from app.controllers.session_attachment_controller import router as session_attachment_router
 from app.controllers.region_controller import router as region_router
+from app.controllers.banner_controller import router as banner_router
 
 # Create FastAPI instance
 app = FastAPI(
@@ -18,6 +21,10 @@ app = FastAPI(
     version=settings.version,
     debug=settings.debug
 )
+
+# Mount uploads directory
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Configure CORS
 app.add_middleware(
@@ -39,6 +46,7 @@ app.include_router(user_notification_router, prefix="/api/v1")
 app.include_router(session_router, prefix="/api/v1")
 app.include_router(session_attachment_router, prefix="/api/v1")
 app.include_router(region_router, prefix="/api/v1")
+app.include_router(banner_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
