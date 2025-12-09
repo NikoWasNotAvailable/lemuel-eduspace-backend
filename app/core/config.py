@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     version: str = "1.0.0"
     
     # CORS
-    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
     
     class Config:
         env_file = ".env"

@@ -433,7 +433,8 @@ class UserNotificationService:
     ) -> List[UserNotification]:
         """Get all users who received a specific notification."""
         query = select(UserNotification).options(
-            selectinload(UserNotification.user)
+            selectinload(UserNotification.user),
+            selectinload(UserNotification.notification)
         ).where(UserNotification.notification_id == notification_id)
         
         if read_status is not None:

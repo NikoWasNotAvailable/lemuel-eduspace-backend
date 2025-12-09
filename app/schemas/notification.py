@@ -33,6 +33,8 @@ class NotificationCreate(NotificationBase):
         if v is not None:
             if v < 0:
                 raise ValueError('Nominal amount must be non-negative')
+            if v >= 100000000:  # DECIMAL(10,2) max is 99,999,999.99
+                raise ValueError('Nominal amount must be less than 100,000,000')
             # Check if nominal is provided for non-payment notifications
             notification_type = values.get('type')
             if notification_type and notification_type != NotificationType.payment:
@@ -41,10 +43,7 @@ class NotificationCreate(NotificationBase):
     
     @validator('date')
     def validate_date(cls, v, values):
-        if v is not None:
-            notification_type = values.get('type')
-            if notification_type and notification_type not in [NotificationType.event, NotificationType.assignment]:
-                raise ValueError('Date can only be set for event and assignment notifications')
+        # Date can be set for all notification types
         return v
 
 class NotificationUpdate(BaseModel):
@@ -72,8 +71,11 @@ class NotificationUpdate(BaseModel):
     
     @validator('nominal')
     def validate_nominal(cls, v):
-        if v is not None and v < 0:
-            raise ValueError('Nominal amount must be non-negative')
+        if v is not None:
+            if v < 0:
+                raise ValueError('Nominal amount must be non-negative')
+            if v >= 100000000:  # DECIMAL(10,2) max is 99,999,999.99
+                raise ValueError('Nominal amount must be less than 100,000,000')
         return v
 
 class NotificationBulkCreate(BaseModel):
