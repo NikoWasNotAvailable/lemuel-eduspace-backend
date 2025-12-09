@@ -124,7 +124,7 @@ async def assign_notification_by_class(
 @router.get("/my-notifications", response_model=List[NotificationWithReadStatusResponse])
 async def get_my_notifications(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=1000),
     unread_only: bool = Query(False, description="Show only unread notifications"),
     type: Optional[NotificationType] = Query(None, description="Filter by notification type"),
     db: AsyncSession = Depends(get_async_db),
@@ -153,7 +153,7 @@ async def get_my_notifications(
 async def get_user_notifications(
     user_id: int,
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=1000),
     unread_only: bool = Query(False, description="Show only unread notifications"),
     type: Optional[NotificationType] = Query(None, description="Filter by notification type"),
     db: AsyncSession = Depends(get_async_db),

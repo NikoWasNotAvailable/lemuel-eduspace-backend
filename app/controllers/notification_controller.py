@@ -77,7 +77,7 @@ async def bulk_create_notifications(
 @router.get("/", response_model=NotificationListResponse)
 async def get_notifications(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=1000),
     type: Optional[NotificationType] = Query(None, description="Filter by notification type"),
     search: Optional[str] = Query(None, description="Search in title and description"),
     start_date: Optional[datetime] = Query(None, description="Filter from this date"),
