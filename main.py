@@ -14,6 +14,7 @@ from app.controllers.session_controller import router as session_router
 from app.controllers.session_attachment_controller import router as session_attachment_router
 from app.controllers.region_controller import router as region_router
 from app.controllers.banner_controller import router as banner_router
+from app.controllers.assignment_controller import router as assignment_router
 
 # Create FastAPI instance
 app = FastAPI(
@@ -47,6 +48,7 @@ app.include_router(session_router, prefix="/api/v1")
 app.include_router(session_attachment_router, prefix="/api/v1")
 app.include_router(region_router, prefix="/api/v1")
 app.include_router(banner_router, prefix="/api/v1")
+app.include_router(assignment_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

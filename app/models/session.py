@@ -19,6 +19,9 @@ class Session(Base):
     # Relationship to SessionAttachment (one-to-many)
     attachments = relationship("SessionAttachment", back_populates="session", cascade="all, delete-orphan")
     
+    # Relationship to AssignmentSubmission
+    submissions = relationship("AssignmentSubmission", back_populates="session", cascade="all, delete-orphan")
+    
     # Unique constraint for subject_id and session_no combination
     __table_args__ = (
         UniqueConstraint('subject_id', 'session_no', name='unique_subject_session_no'),

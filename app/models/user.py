@@ -79,5 +79,8 @@ class User(Base):
     # Relationship to class (for students)
     class_obj = relationship("ClassModel", foreign_keys=[class_id])
     
+    # Relationship to assignment submissions
+    submissions = relationship("AssignmentSubmission", back_populates="student", cascade="all, delete-orphan")
+    
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', role='{self.role}')>"

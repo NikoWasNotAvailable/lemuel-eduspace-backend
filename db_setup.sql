@@ -127,6 +127,22 @@ ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `assignment_submissions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `session_id` INT NOT NULL,
+  `student_id` INT NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `file_path` VARCHAR(500) NOT NULL,
+  `grade` DECIMAL(5, 2) DEFAULT NULL,
+  `feedback` TEXT DEFAULT NULL,
+  `submitted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`session_id`) REFERENCES `sessions`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `admin_login_logs` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `admin_user_id` INT NOT NULL,                        -- FK ke tabel users
