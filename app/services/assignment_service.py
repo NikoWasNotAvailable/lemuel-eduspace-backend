@@ -94,6 +94,16 @@ class AssignmentService:
         return result.scalars().all()
 
     @staticmethod
+    async def get_submission_by_id(
+        db: AsyncSession, 
+        submission_id: int
+    ) -> Optional[AssignmentSubmission]:
+        """Get submission by ID."""
+        query = select(AssignmentSubmission).where(AssignmentSubmission.id == submission_id)
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def grade_submission(
         db: AsyncSession, 
         submission_id: int, 

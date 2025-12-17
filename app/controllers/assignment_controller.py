@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+import os
 
 from app.core.database import get_async_db
 from app.core.auth import get_current_user, require_roles
@@ -51,6 +53,44 @@ async def get_my_submissions(
 ):
     """Get my submissions."""
     return await AssignmentService.get_my_submissions(db, current_user.id)
+
+@router.get("/{submission_id}/download")
+async def download_submission(
+    submission_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Download assignment submission file."""
+    submission = await AssignmentService.get_submission_by_id(db, submission_id)
+    if not submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Submission not found"
+        )
+    
+    # Check permissions: Admin/Teacher can download any, Student can only download their own
+    if current_user.role not in [UserRole.admin, UserRole.teacher] and submission.student_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to download this submission"
+        )
+    
+    # Construct absolute file path
+    # Assuming file_path in DB is relative like "/uploads/assignments/..."
+    # We need to remove the leading slash if present to join correctly
+    relative_path = submission.file_path.lstrip("/")
+    file_path = os.path.abspath(relative_path)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found on server"
+        )
+    
+    return FileResponse(
+        path=file_path,
+        filename=submission.filename
+    )
 
 @router.put("/{submission_id}/grade", response_model=AssignmentSubmissionResponse)
 async def grade_submission(
