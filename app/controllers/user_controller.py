@@ -284,12 +284,13 @@ async def get_users(
     role: Optional[str] = Query(None),
     grade: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    class_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
     """Get list of users (admin only)."""
     
-    users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status)
+    users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status, class_id=class_id)
     
     # Transform users to include class_name
     result = []

@@ -127,7 +127,8 @@ class UserService:
         limit: int = 100,
         role: Optional[str] = None,
         grade: Optional[str] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        class_id: Optional[int] = None
     ) -> List[User]:
         """Get list of users with filters."""
         query = select(User).options(joinedload(User.region), joinedload(User.class_obj))
@@ -139,6 +140,8 @@ class UserService:
             query = query.where(User.grade == grade)
         if status:
             query = query.where(User.status == status)
+        if class_id:
+            query = query.where(User.class_id == class_id)
         
         # Apply pagination
         query = query.offset(skip).limit(limit)
