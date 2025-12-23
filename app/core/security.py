@@ -1,49 +1,32 @@
 from datetime import datetime, timedelta
 from typing import Optional, Union
 from jose import JWTError, jwt
-import hashlib
-import secrets
+from passlib.context import CryptContext
 from app.core.config import settings
+import hashlib
 
-def verify_password(plain_password: str, stored_password: str, is_admin: bool = False) -> bool:
-    """Verify a password against stored password (hashed for admin, plaintext for others)."""
-    if is_admin:
-        # For admin users, verify against SHA-256 hash with salt
-        return verify_admin_password(plain_password, stored_password)
-    else:
-        # For non-admin users, simple plaintext comparison
-        return plain_password == stored_password
+# Setup password context with bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_password_hash(password: str, is_admin: bool = False) -> str:
-    """Generate password hash for admin or return plaintext for others."""
-    if is_admin:
-        # For admin users, use SHA-256 with salt (simpler than bcrypt)
-        return hash_admin_password(password)
-    else:
-        # For non-admin users, store as plaintext
-        return password
-
-def hash_admin_password(password: str) -> str:
-    """Hash admin password using SHA-256 with random salt."""
-    # Generate a random salt
-    salt = secrets.token_hex(16)
-    # Create hash with salt
-    pwd_hash = hashlib.sha256((password + salt).encode()).hexdigest()
-    # Store as salt:hash format
-    return f"{salt}:{pwd_hash}"
-
-def verify_admin_password(password: str, stored_hash: str) -> bool:
-    """Verify admin password against stored hash."""
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash (supports legacy admin hashes)."""
     try:
-        # Split stored hash into salt and hash
-        salt, stored_pwd_hash = stored_hash.split(':', 1)
-        # Hash the provided password with the same salt
-        pwd_hash = hashlib.sha256((password + salt).encode()).hexdigest()
-        # Compare hashes
-        return pwd_hash == stored_pwd_hash
-    except ValueError:
-        # If stored_hash doesn't contain ':', it might be an old format
+        # Try bcrypt verification first
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        # Fallback to legacy admin hash verification (SHA256 with salt)
+        try:
+            if ':' in hashed_password:
+                salt, stored_pwd_hash = hashed_password.split(':', 1)
+                pwd_hash = hashlib.sha256((plain_password + salt).encode()).hexdigest()
+                return pwd_hash == stored_pwd_hash
+        except Exception:
+            pass
         return False
+
+def get_password_hash(password: str) -> str:
+    """Generate password hash."""
+    return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create access token."""

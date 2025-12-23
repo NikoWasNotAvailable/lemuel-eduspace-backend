@@ -91,7 +91,14 @@ class UserUpdate(BaseModel):
     religion: Optional[UserReligion] = None
     status: Optional[UserStatus] = None
     profile_picture: Optional[str] = None
+    password: Optional[str] = None
     parent_password: Optional[str] = None
+
+    @validator('password')
+    def validate_password(cls, v):
+        if v is not None and len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
 
 class UserChangePassword(BaseModel):
     """Schema for changing user password."""
@@ -151,29 +158,6 @@ class UserResponse(UserBase):
         # Note: This won't work directly from values, needs to be set in service layer
         return v
 
-    class Config:
-        from_attributes = True
-
-class AdminUserResponse(UserBase):
-    """Schema for admin user response (includes sensitive data like password hash)."""
-    id: int
-    password: str  # WARNING: This includes the hashed password - only for admin use
-    created_at: datetime
-    updated_at: datetime
-    region: Optional[str] = None
-    class_name: Optional[str] = None
-    
-    @validator('region', pre=True)
-    def extract_region_name(cls, v):
-        if v and hasattr(v, 'name'):
-            return v.name
-        return v
-    
-    @validator('class_name', pre=True, always=True)
-    def extract_class_name(cls, v, values):
-        # This validator extracts class name from the ORM object if present
-        return v
-    
     class Config:
         from_attributes = True
 

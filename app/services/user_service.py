@@ -7,10 +7,6 @@ import logging
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserChangePassword
 from app.core.security import get_password_hash, verify_password
-from app.security.insecure_password_handling import (
-    store_password_per_institution_request,
-    verify_password_per_institution_request
-)
 from fastapi import HTTPException, status
 
 # Setup logging
@@ -23,25 +19,13 @@ class UserService:
     async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
         """Create a new user."""
         try:
-            # Log that we're following institution-requested password handling
-            logger.warning(
-                f"Creating user with role '{user_data.role}' using institution-requested password handling. "
-                f"This approach was specifically requested by the educational institution."
-            )
-            
-            # Use institution-requested password handling approach
-            stored_password = store_password_per_institution_request(
-                user_data.password, 
-                user_data.role
-            )
+            # Hash password
+            stored_password = get_password_hash(user_data.password)
             
             # Handle parent password for student roles
             stored_parent_password = None
             if user_data.parent_password and user_data.role == "student":
-                stored_parent_password = store_password_per_institution_request(
-                    user_data.parent_password, 
-                    "parent"  # Use parent role for parent password hashing
-                )
+                stored_parent_password = get_password_hash(user_data.parent_password)
             
             # Create user instance
             db_user = User(
@@ -175,6 +159,15 @@ class UserService:
         
         # Update fields
         update_data = user_update.model_dump(exclude_unset=True)
+        
+        # Handle password hashing if present
+        if 'password' in update_data and update_data['password']:
+            update_data['password'] = get_password_hash(update_data['password'])
+            
+        # Handle parent password hashing if present
+        if 'parent_password' in update_data and update_data['parent_password']:
+            update_data['parent_password'] = get_password_hash(update_data['parent_password'])
+            
         for field, value in update_data.items():
             setattr(db_user, field, value)
         
@@ -211,27 +204,15 @@ class UserService:
         if not db_user:
             return False
         
-        # Log password change using institution-requested approach
-        logger.warning(
-            f"Changing password for user with role '{db_user.role}' using institution-requested password handling."
-        )
-        
-        # Verify current password using institution-requested approach
-        if not verify_password_per_institution_request(
-            password_data.current_password, 
-            db_user.password, 
-            db_user.role
-        ):
+        # Verify current password
+        if not verify_password(password_data.current_password, db_user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current password is incorrect"
             )
         
-        # Update password using institution-requested approach
-        db_user.password = store_password_per_institution_request(
-            password_data.new_password, 
-            db_user.role
-        )
+        # Update password
+        db_user.password = get_password_hash(password_data.new_password)
         await db.commit()
         return True
     
@@ -253,12 +234,7 @@ class UserService:
         if not user:
             return None
         
-        # Use institution-requested password verification approach
-        logger.info(
-            f"Authenticating user with role '{user.role}' using institution-requested password handling."
-        )
-        
-        if not verify_password_per_institution_request(password, user.password, user.role):
+        if not verify_password(password, user.password):
             return None
         
         return user
@@ -278,12 +254,7 @@ class UserService:
         if not user.parent_password:
             return None
         
-        # Use institution-requested password verification approach for parent password
-        logger.info(
-            f"Authenticating parent access to student account using institution-requested password handling."
-        )
-        
-        if not verify_password_per_institution_request(parent_password, user.parent_password, "parent"):
+        if not verify_password(parent_password, user.parent_password):
             return None
         
         return user
@@ -308,21 +279,14 @@ class UserService:
             )
         
         # Verify student's current password
-        if not verify_password_per_institution_request(
-            student_password, 
-            db_user.password, 
-            db_user.role
-        ):
+        if not verify_password(student_password, db_user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Student password is incorrect"
             )
         
         # Set parent password
-        db_user.parent_password = store_password_per_institution_request(
-            parent_password, 
-            "parent"
-        )
+        db_user.parent_password = get_password_hash(parent_password)
         await db.commit()
         return True
     
@@ -353,21 +317,14 @@ class UserService:
             )
         
         # Verify current parent password
-        if not verify_password_per_institution_request(
-            current_parent_password, 
-            db_user.parent_password, 
-            "parent"
-        ):
+        if not verify_password(current_parent_password, db_user.parent_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current parent password is incorrect"
             )
         
         # Update parent password
-        db_user.parent_password = store_password_per_institution_request(
-            new_parent_password, 
-            "parent"
-        )
+        db_user.parent_password = get_password_hash(new_parent_password)
         await db.commit()
         return True
     
@@ -390,11 +347,7 @@ class UserService:
             )
         
         # Verify student's current password
-        if not verify_password_per_institution_request(
-            student_password, 
-            db_user.password, 
-            db_user.role
-        ):
+        if not verify_password(student_password, db_user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Student password is incorrect"

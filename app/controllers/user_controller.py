@@ -17,7 +17,6 @@ from app.schemas.user import (
     PublicUserCreate,
     UserUpdate, 
     UserResponse, 
-    AdminUserResponse,
     UserLogin, 
     UserLoginResponse,
     UserChangePassword,
@@ -277,7 +276,7 @@ async def change_current_user_password(
         )
     return {"message": "Password changed successfully"}
 
-@router.get("/", response_model=List[AdminUserResponse])
+@router.get("/", response_model=List[UserResponse])
 async def get_users(
     response: Response,
     skip: int = Query(0, ge=0),
@@ -288,46 +287,27 @@ async def get_users(
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
-    """Get list of users (admin only) - WARNING: Includes password data per institution request."""
-    
-    # Set security headers to prevent caching of sensitive data
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    
-    # Log the sensitive operation
-    logger.critical(
-        f"ADMIN PASSWORD EXPOSURE: Admin user '{current_user.name}' (ID: {current_user.id}) "
-        f"accessed user list with password data. This operation was requested by the institution. "
-        f"Filters: role={role}, grade={grade}, status={status}, skip={skip}, limit={limit}"
-    )
+    """Get list of users (admin only)."""
     
     users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status)
     
     # Transform users to include class_name
     result = []
     for user in users:
-        user_dict = AdminUserResponse.model_validate(user).model_dump()
+        user_dict = UserResponse.model_validate(user).model_dump()
         user_dict['class_name'] = user.class_obj.name if user.class_obj else None
-        result.append(AdminUserResponse(**user_dict))
+        result.append(UserResponse(**user_dict))
     
     return result
 
-@router.get("/{user_id}", response_model=AdminUserResponse)
+@router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(
     user_id: int,
     response: Response,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
-    """Get user by ID (admin only) - WARNING: Includes password data per institution request."""
-    
-    # Set security headers to prevent caching of sensitive data
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    response.headers["X-Content-Type-Options"] = "nosniff"
+    """Get user by ID (admin only)."""
     
     user = await UserService.get_user_by_id(db, user_id)
     if not user:
@@ -336,18 +316,11 @@ async def get_user_by_id(
             detail="User not found"
         )
     
-    # Log the sensitive operation
-    logger.critical(
-        f"ADMIN PASSWORD EXPOSURE: Admin user '{current_user.name}' (ID: {current_user.id}) "
-        f"accessed user '{user.name}' (ID: {user.id}, role: {user.role}) with password data. "
-        f"This operation was requested by the institution."
-    )
-    
     # Transform to include class_name
-    user_dict = AdminUserResponse.model_validate(user).model_dump()
+    user_dict = UserResponse.model_validate(user).model_dump()
     user_dict['class_name'] = user.class_obj.name if user.class_obj else None
     
-    return AdminUserResponse(**user_dict)
+    return UserResponse(**user_dict)
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user_by_id(

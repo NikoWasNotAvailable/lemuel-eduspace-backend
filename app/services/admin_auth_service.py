@@ -39,7 +39,7 @@ class AdminAuthService:
             )
         
         # Verify password (admin passwords are hashed)
-        if not verify_password(login_data.password, admin_user.password, is_admin=True):
+        if not verify_password(login_data.password, admin_user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid password",
