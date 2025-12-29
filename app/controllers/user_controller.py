@@ -288,10 +288,10 @@ async def get_users(
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of users (admin and teachers)."""
+    """Get list of users (admin, teachers, and students)."""
     
-    # Allow admin and teacher roles
-    if current_user.role not in ["admin", "teacher"]:
+    # Allow admin, teacher, and student roles
+    if current_user.role not in ["admin", "teacher", "student"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
