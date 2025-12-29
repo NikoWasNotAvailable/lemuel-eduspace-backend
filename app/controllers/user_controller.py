@@ -286,9 +286,16 @@ async def get_users(
     status: Optional[str] = Query(None),
     class_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_async_db),
-    current_user: User = Depends(get_admin_user)
+    current_user: User = Depends(get_current_user)
 ):
-    """Get list of users (admin only)."""
+    """Get list of users (admin and teachers)."""
+    
+    # Allow admin and teacher roles
+    if current_user.role not in ["admin", "teacher"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     
     users = await UserService.get_users(db, skip=skip, limit=limit, role=role, grade=grade, status=status, class_id=class_id)
     

@@ -164,12 +164,18 @@ class UserService:
         update_data = user_update.model_dump(exclude_unset=True)
         
         # Handle password hashing if present
-        if 'password' in update_data and update_data['password']:
-            update_data['password'] = get_password_hash(update_data['password'])
+        if 'password' in update_data:
+            if update_data['password']:
+                update_data['password'] = get_password_hash(update_data['password'])
+            else:
+                del update_data['password']
             
         # Handle parent password hashing if present
-        if 'parent_password' in update_data and update_data['parent_password']:
-            update_data['parent_password'] = get_password_hash(update_data['parent_password'])
+        if 'parent_password' in update_data:
+            if update_data['parent_password']:
+                update_data['parent_password'] = get_password_hash(update_data['parent_password'])
+            else:
+                del update_data['parent_password']
             
         for field, value in update_data.items():
             setattr(db_user, field, value)

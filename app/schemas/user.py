@@ -20,11 +20,11 @@ class UserBase(BaseModel):
     religion: Optional[UserReligion] = None
     status: UserStatus = UserStatus.active
     profile_picture: Optional[str] = None
-    parent_password: Optional[str] = None  # Only for student roles
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
     password: str
+    parent_password: Optional[str] = None  # Only for student roles
     
     @validator('password')
     def validate_password(cls, v):
@@ -96,8 +96,14 @@ class UserUpdate(BaseModel):
 
     @validator('password')
     def validate_password(cls, v):
-        if v is not None and len(v) < 8:
+        if v and len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        return v
+
+    @validator('parent_password')
+    def validate_parent_password(cls, v):
+        if v and len(v) < 8:
+            raise ValueError('Parent password must be at least 8 characters long')
         return v
 
 class UserChangePassword(BaseModel):
