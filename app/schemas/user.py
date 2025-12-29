@@ -151,6 +151,7 @@ class UserResponse(UserBase):
     updated_at: datetime
     region: Optional[str] = None
     class_name: Optional[str] = None
+    profile_picture_url: Optional[str] = None
     
     @validator('region', pre=True)
     def extract_region_name(cls, v):
@@ -163,6 +164,19 @@ class UserResponse(UserBase):
         # This validator extracts class name from the ORM object if present
         # Note: This won't work directly from values, needs to be set in service layer
         return v
+
+    @validator('profile_picture_url', pre=True, always=True)
+    def compute_profile_picture_url(cls, v, values):
+        profile_picture = values.get('profile_picture')
+        if not profile_picture:
+            return None
+        
+        # Convert file path to URL
+        # The path in DB is like "uploads/profile_pictures/filename.jpg"
+        # The URL should be "/api/v1/users/profile-picture/filename.jpg"
+        import os
+        filename = os.path.basename(profile_picture)
+        return f"/api/v1/users/profile-picture/{filename}"
 
     class Config:
         from_attributes = True
