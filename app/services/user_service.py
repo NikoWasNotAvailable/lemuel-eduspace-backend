@@ -183,6 +183,15 @@ class UserService:
         try:
             await db.commit()
             await db.refresh(db_user)
+            
+            # Eagerly load relationships to avoid MissingGreenlet error during serialization
+            query = select(User).where(User.id == db_user.id).options(
+                joinedload(User.region),
+                joinedload(User.class_obj)
+            )
+            result = await db.execute(query)
+            db_user = result.scalar_one()
+            
             return db_user
         except IntegrityError as e:
             await db.rollback()

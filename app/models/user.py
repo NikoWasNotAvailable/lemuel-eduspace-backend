@@ -82,5 +82,9 @@ class User(Base):
     # Relationship to assignment submissions
     submissions = relationship("AssignmentSubmission", back_populates="student", cascade="all, delete-orphan")
     
+    @property
+    def class_name(self):
+        return self.class_obj.name if self.class_obj else None
+
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', role='{self.role}')>"
