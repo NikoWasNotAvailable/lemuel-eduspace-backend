@@ -133,9 +133,13 @@ async def get_my_notifications(
     """Get notifications for the current user."""
     skip = (page - 1) * page_size
     
+    # Check if user is logged in with parent access
+    is_parent_access = getattr(current_user, "parent_access", False)
+    
     user_notifications, total = await UserNotificationService.get_user_notifications(
         db, current_user.id, skip=skip, limit=page_size, 
-        unread_only=unread_only, notification_type=type
+        unread_only=unread_only, notification_type=type,
+        is_parent_access=is_parent_access
     )
     
     response = []
@@ -162,9 +166,11 @@ async def get_user_notifications(
     """Get notifications for a specific user (teacher or admin)."""
     skip = (page - 1) * page_size
     
+    # Teachers and admins can see all notifications including payments
     user_notifications, total = await UserNotificationService.get_user_notifications(
         db, user_id, skip=skip, limit=page_size, 
-        unread_only=unread_only, notification_type=type
+        unread_only=unread_only, notification_type=type,
+        is_parent_access=True
     )
     
     return [UserNotificationForUserResponse.model_validate(user_notif) for user_notif in user_notifications]

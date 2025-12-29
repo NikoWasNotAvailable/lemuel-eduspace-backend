@@ -333,14 +333,15 @@ class UserNotificationService:
         skip: int = 0,
         limit: int = 100,
         unread_only: bool = False,
-        notification_type: Optional[NotificationType] = None
+        notification_type: Optional[NotificationType] = None,
+        is_parent_access: bool = False
     ) -> Tuple[List[UserNotification], int]:
         """Get notifications for a specific user."""
         query = select(UserNotification).options(
             selectinload(UserNotification.notification)
-        ).where(UserNotification.user_id == user_id)
+        ).join(Notification).where(UserNotification.user_id == user_id)
         
-        count_query = select(func.count(UserNotification.id)).where(
+        count_query = select(func.count(UserNotification.id)).join(Notification).where(
             UserNotification.user_id == user_id
         )
         
@@ -349,11 +350,16 @@ class UserNotificationService:
             count_query = count_query.where(UserNotification.is_read == False)
         
         if notification_type:
-            query = query.join(Notification).where(Notification.type == notification_type)
-            count_query = count_query.join(Notification).where(Notification.type == notification_type)
+            query = query.where(Notification.type == notification_type)
+            count_query = count_query.where(Notification.type == notification_type)
+        
+        # Filter payment notifications if not parent access
+        if not is_parent_access:
+            query = query.where(Notification.type != NotificationType.payment)
+            count_query = count_query.where(Notification.type != NotificationType.payment)
         
         # Order by notification creation time (newest first)
-        query = query.join(Notification).order_by(
+        query = query.order_by(
             desc(Notification.created_at)
         ).offset(skip).limit(limit)
         

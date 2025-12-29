@@ -34,6 +34,9 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     
+    # Attach parent_access claim to user object
+    user.parent_access = payload.get("parent_access", False)
+    
     return user
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:

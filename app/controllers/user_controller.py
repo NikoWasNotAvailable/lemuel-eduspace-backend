@@ -140,38 +140,39 @@ async def login_student(
         user=UserResponse.model_validate(user)
     )
 
-@router.post("/login/parent", response_model=UserLoginResponse)
-async def login_parent(
-    user_credentials: UserLogin,
-    db: AsyncSession = Depends(get_async_db)
-):
-    """Authenticate parent and return access token."""
-    user = await UserService.authenticate_user(
-        db, user_credentials.identifier, user_credentials.password
-    )
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect identifier or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Only allow parent users
-    if user.role not in ["parent", "student_parent"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This endpoint is only for parent users",
-        )
-    
-    # Create access token
-    access_token = create_access_token(data={"sub": str(user.id)})
-    
-    return UserLoginResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user)
-    )
+# Conflicting endpoint removed
+# @router.post("/login/parent", response_model=UserLoginResponse)
+# async def login_parent(
+#     user_credentials: UserLogin,
+#     db: AsyncSession = Depends(get_async_db)
+# ):
+#     """Authenticate parent and return access token."""
+#     user = await UserService.authenticate_user(
+#         db, user_credentials.identifier, user_credentials.password
+#     )
+#     
+#     if not user:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Incorrect identifier or password",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
+#     
+#     # Only allow parent users
+#     if user.role not in ["parent", "student_parent"]:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="This endpoint is only for parent users",
+#         )
+#     
+#     # Create access token
+#     access_token = create_access_token(data={"sub": str(user.id)})
+#     
+#     return UserLoginResponse(
+#         access_token=access_token,
+#         token_type="bearer",
+#         user=UserResponse.model_validate(user)
+#     )
 
 @router.post("/login/teacher", response_model=UserLoginResponse)
 async def login_teacher(
@@ -537,12 +538,12 @@ async def upload_user_profile_picture(
 
 @router.post("/login/parent", response_model=UserLoginResponse)
 async def login_parent_access(
-    parent_credentials: ParentLogin,
+    parent_credentials: UserLogin,
     db: AsyncSession = Depends(get_async_db)
 ):
     """Authenticate parent access to student account using parent password."""
     user = await UserService.authenticate_parent_access(
-        db, parent_credentials.identifier, parent_credentials.parent_password
+        db, parent_credentials.identifier, parent_credentials.password
     )
     
     if not user:
