@@ -6,7 +6,7 @@ A FastAPI backend for an educational management system with user authentication 
 
 - **User Management**: Complete CRUD operations for users with profile pictures
 - **Authentication**: JWT-based authentication with role-based access control
-- **Role-based Access**: Support for admin, teacher, student, parent, and student_parent roles
+- **Role-based Access**: Support for admin, teacher, and student roles (parents access student accounts via parent_password)
 - **Class & Subject Management**: Organize educational content with classes and subjects
 - **Teacher-Subject Assignment**: Assign teachers to specific subjects
 - **Student Enrollment**: Manage student enrollment in classes
@@ -246,8 +246,14 @@ The API will be available at:
 - **admin**: Full system access
 - **teacher**: Teacher-specific permissions
 - **student**: Student-specific permissions
-- **parent**: Parent-specific permissions
-- **student_parent**: Combined student and parent permissions
+
+### Parent Access
+
+Parents don't have separate accounts. Instead, they access their child's student account using:
+- **Same identifier**: Student's NIS or email
+- **Parent password**: A separate password field (`parent_password`) on the student account
+- **Login endpoint**: `POST /api/v1/users/login/parent`
+- **Token includes**: `parent_access: true` claim for frontend differentiation
 
 ## User Grades
 

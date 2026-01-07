@@ -22,7 +22,6 @@ from app.schemas.user import (
     UserChangePassword,
     ParentPasswordSet,
     ParentPasswordChange,
-    ParentLogin,
     ProfilePictureUploadResponse
 )
 from app.models.user import User
@@ -60,20 +59,9 @@ async def register_student(
     
     return await UserService.create_user(db, user_create_data)
 
-@router.post("/register/parent", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register_parent(
-    user_data: PublicUserCreate,
-    db: AsyncSession = Depends(get_async_db)
-):
-    """Register a new parent."""
-    
-    # Convert to UserCreate with parent role
-    user_create_data = UserCreate(
-        **user_data.dict(),
-        role="parent"
-    )
-    
-    return await UserService.create_user(db, user_create_data)
+# NOTE: No /register/parent endpoint needed
+# Parents access their child's student account using the parent_password field
+# Use /login/parent with the student's identifier (NIS/email) + parent_password
 
 @router.post("/register/teacher", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_teacher(
@@ -534,14 +522,30 @@ async def upload_user_profile_picture(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upload profile picture"
-        )# Parent Password Management Endpoints
+        )
+
+# =============================================================================
+# Parent Access Endpoints
+# =============================================================================
+# Parents don't have separate accounts. They access their child's student account
+# using the student's identifier (NIS/email) + the parent_password field.
+# The returned token includes "parent_access": true to differentiate from student login.
+# Frontend can use this flag to show parent-specific views/features.
 
 @router.post("/login/parent", response_model=UserLoginResponse)
 async def login_parent_access(
     parent_credentials: UserLogin,
     db: AsyncSession = Depends(get_async_db)
 ):
-    """Authenticate parent access to student account using parent password."""
+    """
+    Authenticate parent access to student account.
+    
+    Parents use the same identifier (NIS/email) as their child's student account,
+    but authenticate with the parent_password instead of the student password.
+    
+    The returned token includes 'parent_access: true' claim, allowing the frontend
+    to differentiate between student and parent sessions.
+    """
     user = await UserService.authenticate_parent_access(
         db, parent_credentials.identifier, parent_credentials.password
     )
@@ -559,7 +563,8 @@ async def login_parent_access(
     return UserLoginResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.model_validate(user)
+        user=UserResponse.model_validate(user),
+        parent_access=True  # Indicates this is a parent session
     )
 
 @router.post("/me/parent-password/set")

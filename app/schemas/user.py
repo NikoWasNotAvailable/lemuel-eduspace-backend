@@ -139,10 +139,8 @@ class ParentPasswordChange(BaseModel):
             raise ValueError('New parent password must be at least 8 characters long')
         return v
 
-class ParentLogin(BaseModel):
-    """Schema for parent login to student account."""
-    identifier: str  # Student's NIS or email
-    parent_password: str
+# NOTE: ParentLogin schema not needed - we use UserLogin for /login/parent endpoint
+# Parents use the same identifier (student's NIS/email) + parent_password field
 
 class UserResponse(UserBase):
     """Schema for user response (excludes sensitive data)."""
@@ -191,6 +189,7 @@ class UserLoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+    parent_access: bool = False  # True when logged in via /login/parent endpoint
 
 class Token(BaseModel):
     """Token schema."""

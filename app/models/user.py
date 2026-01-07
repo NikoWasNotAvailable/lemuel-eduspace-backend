@@ -8,8 +8,6 @@ class UserRole(str, enum.Enum):
     admin = "admin"
     teacher = "teacher"
     student = "student"
-    parent = "parent"
-    student_parent = "student_parent"
 
 class UserGrade(str, enum.Enum):
     TKA = "TKA"

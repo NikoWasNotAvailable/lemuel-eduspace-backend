@@ -57,7 +57,7 @@ class UserNotificationAssignByRole(BaseModel):
     
     @validator('roles')
     def validate_roles(cls, v):
-        valid_roles = ['admin', 'teacher', 'student', 'parent', 'student_parent']
+        valid_roles = ['admin', 'teacher', 'student']
         if len(v) == 0:
             raise ValueError('At least one role must be provided')
         for role in v:

@@ -12,7 +12,7 @@ CREATE TABLE `users` (
   `password` VARCHAR(255) NOT NULL,                        -- Simpan hash, bukan plaintext
   `parent_password` VARCHAR(255) DEFAULT NULL,             -- Parent password for student accounts
   `name` VARCHAR(100) NOT NULL,
-  `role` ENUM('admin', 'teacher', 'student', 'parent', 'student_parent') DEFAULT 'student',
+  `role` ENUM('admin', 'teacher', 'student') DEFAULT 'student',
   `grade` ENUM('TKA', 'TKB', 'SD1', 'SD2', 'SD3', 'SD4', 'SD5', 'SD6', 'SMP1', 'SMP2', 'SMP3') DEFAULT NULL,
   `gender` ENUM('male', 'female') DEFAULT NULL,
   `email` VARCHAR(100) UNIQUE,

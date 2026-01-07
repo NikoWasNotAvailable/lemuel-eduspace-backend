@@ -1,102 +1,103 @@
-# Parent Module Documentation
+# Parent Access Module Documentation
 
 ## Overview
 
-The parent module is a simple extension of the user system that adds a separate password field for parents. Parents use the student's existing credentials (NIS or email) but with their own password. This allows parents to access student-related information without sharing the actual student password.
+Parent access is implemented as a simple extension of the student user system. Instead of having separate parent accounts, parents can access their child's student account using a secondary password field (`parent_password`). This approach:
+
+- Avoids duplicate accounts
+- Keeps the relationship simple (same account, different password)
+- Allows frontend to differentiate via the `parent_access` flag in login response/token
+
+## How It Works
+
+1. **Student registers** with a regular account (NIS/email + password)
+2. **Student sets parent password** via `/me/parent-password/set` endpoint
+3. **Parent logs in** using the student's NIS/email but with the `parent_password`
+4. **Token includes** `parent_access: true` claim for frontend differentiation
 
 ## Database Schema
 
-### Parents Table
+The parent password is stored directly on the `users` table:
 
 ```sql
-CREATE TABLE `parents` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `student_id` INT NOT NULL UNIQUE,                   -- FK to users table (must be student, one-to-one)
-  `parent_password` VARCHAR(255) NOT NULL,            -- Parent's separate password hash
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  INDEX `idx_student_id` (`student_id`)
+CREATE TABLE `users` (
+  ...
+  `parent_password` VARCHAR(255) DEFAULT NULL,  -- Parent password for student accounts
+  ...
 );
 ```
 
 ## API Endpoints
 
 ### Parent Authentication
-- `POST /api/v1/parents/login` - Parent login (can use parent email or student NIS)
+- `POST /api/v1/users/login/parent` - Parent login using student identifier + parent password
 
-### Parent Management (Admin Only)
-- `POST /api/v1/parents/register` - Register new parent for student
-- `GET /api/v1/parents/` - Get all parents
-- `GET /api/v1/parents/{parent_id}` - Get parent by ID
-- `DELETE /api/v1/parents/{parent_id}` - Delete parent record
-- `GET /api/v1/parents/student/{student_id}` - Get parent for specific student
+### Parent Password Management (Student Self-Service)
+- `POST /api/v1/users/me/parent-password/set` - Set parent password (requires student password verification)
+- `POST /api/v1/users/me/parent-password/change` - Change parent password (requires current parent password)
+- `DELETE /api/v1/users/me/parent-password` - Remove parent password (requires student password)
 
-### Parent Self-Service
-- `GET /api/v1/parents/me` - Get student information (parent access)
-- `POST /api/v1/parents/me/change-password` - Change parent password
+## Authentication Flow
 
-## Authentication
-
-Parents authenticate using:
-1. Student's NIS (Nomor Induk Siswa) + Parent password
-2. Student's email + Parent password
-
-The system creates JWT tokens with the format `parent_{parent_id}` in the subject field to distinguish parent tokens from user tokens.
-
-## Key Features
-
-1. **Simple Extension**: Just adds a password field to existing student records
-2. **One-to-One Relationship**: Each student can have one parent record
-3. **Reuse Student Credentials**: Parents login with student's NIS/email but their own password
-4. **Security**: Uses the same institution-requested password handling as the main user system
-5. **Admin Management**: Admins can create and delete parent records
-6. **Self-Service**: Parents can change their password and view student information
-
-## Usage Examples
-
-### Creating a Parent Record (Admin)
-
-```python
-parent_data = ParentCreate(
-    student_id=123,
-    parent_password="securepass123"
-)
+### Parent Login Request
+```json
+POST /api/v1/users/login/parent
+{
+    "identifier": "STU001",       // Student's NIS or email
+    "password": "parentpass123"   // Parent's password (not the student password)
+}
 ```
 
-### Parent Login
-
-```python
-# Login with student NIS + parent password
-login_data = ParentLogin(
-    identifier="STU001",  # Student's NIS
-    password="securepass123"  # Parent's password
-)
-
-# Or login with student email + parent password
-login_data = ParentLogin(
-    identifier="student@school.com",  # Student's email
-    password="securepass123"  # Parent's password
-)
+### Parent Login Response
+```json
+{
+    "access_token": "eyJ...",
+    "token_type": "bearer",
+    "user": { ... student data ... },
+    "parent_access": true          // Indicates this is a parent session
+}
 ```
 
+The JWT token also includes `"parent_access": true` in its claims.
 
+## Setting Up Parent Access
+
+### 1. Student Sets Parent Password
+```json
+POST /api/v1/users/me/parent-password/set
+Authorization: Bearer <student_token>
+{
+    "student_password": "studentpass123",  // Verify student ownership
+    "parent_password": "parentpass123"     // New parent password
+}
+```
+
+### 2. Parent Logs In
+```json
+POST /api/v1/users/login/parent
+{
+    "identifier": "STU001",
+    "password": "parentpass123"
+}
+```
+
+## Frontend Integration
+
+The frontend can differentiate between student and parent sessions by:
+
+1. **Login endpoint used**: `/login/student` vs `/login/parent`
+2. **Response field**: `parent_access: true` in login response
+3. **JWT claim**: `parent_access: true` in decoded token
+
+Store this information in your auth state to show appropriate UI/features.
 
 ## Security Considerations
 
-1. Parent passwords are stored using the same secure hashing mechanism as user passwords
-2. Parent authentication generates separate JWT tokens to maintain security boundaries
-3. Parents can only access information related to their linked student
-4. All parent management operations require admin privileges
-5. Parents use student identifiers (NIS/email) but cannot change student information
-
-## Testing
-
-Run the test script to verify parent functionality:
-
-```bash
-python test_parent.py
-```
+1. Parent passwords use the same bcrypt hashing as regular passwords
+2. Setting parent password requires student password verification
+3. Parent sessions are clearly marked in both response and token
+4. Parents access the same student account but frontend can restrict actions based on `parent_access` flag
+5. Minimum 8 character password requirement applies to parent passwords
 
 This will:
 1. Create a test student
