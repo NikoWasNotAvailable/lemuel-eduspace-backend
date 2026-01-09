@@ -127,6 +127,7 @@ async def get_my_notifications(
     page_size: int = Query(20, ge=1, le=1000),
     unread_only: bool = Query(False, description="Show only unread notifications"),
     type: Optional[NotificationType] = Query(None, description="Filter by notification type"),
+    parent_access: bool = Query(False, description="Whether the request is from a parent view"),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -135,7 +136,8 @@ async def get_my_notifications(
     
     user_notifications, total = await UserNotificationService.get_user_notifications(
         db, current_user.id, skip=skip, limit=page_size, 
-        unread_only=unread_only, notification_type=type
+        unread_only=unread_only, notification_type=type,
+        is_parent_access=parent_access
     )
     
     response = []

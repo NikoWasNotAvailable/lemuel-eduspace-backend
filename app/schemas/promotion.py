@@ -32,3 +32,26 @@ class PromotionHistoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PromotionHistoryListResponse(BaseModel):
+    """Response for listing promotion history records."""
+    id: int
+    promotion_date: datetime
+    status: str
+    summary: Dict[str, int]  # Calculated from details
+    total_affected: int
+
+    class Config:
+        from_attributes = True
+
+class PromotionHistoryDetailResponse(BaseModel):
+    """Response for single promotion history with full details."""
+    id: int
+    promotion_date: datetime
+    status: str
+    summary: Dict[str, int]
+    total_affected: int
+    details: List[StudentPromotionDetail]
+
+    class Config:
+        from_attributes = True

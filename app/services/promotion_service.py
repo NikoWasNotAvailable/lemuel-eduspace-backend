@@ -195,6 +195,22 @@ class PromotionService:
         return history
 
     @staticmethod
+    async def get_promotion_history(db: AsyncSession) -> List[PromotionHistory]:
+        """Get all promotion history records, newest first."""
+        result = await db.execute(
+            select(PromotionHistory).order_by(PromotionHistory.promotion_date.desc())
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_promotion_history_by_id(db: AsyncSession, history_id: int) -> Optional[PromotionHistory]:
+        """Get a specific promotion history record by ID."""
+        result = await db.execute(
+            select(PromotionHistory).where(PromotionHistory.id == history_id)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def undo_promotion(db: AsyncSession, history_id: int) -> bool:
         # 1. Fetch history
         result = await db.execute(select(PromotionHistory).where(PromotionHistory.id == history_id))
