@@ -241,6 +241,13 @@ The API will be available at:
 - `POST /api/v1/user-notifications/{notification_id}/read` - Mark notification as read
 - `GET /api/v1/user-notifications/stats` - User notification statistics (admin/teacher)
 
+### Promotion Management (Admin Only)
+- `GET /api/v1/promotions/history` - List all promotion history (summary)
+- `GET /api/v1/promotions/history/{history_id}` - Get specific promotion history (with full details)
+- `POST /api/v1/promotions/preview` - Preview promotion changes (no DB changes)
+- `POST /api/v1/promotions/confirm` - Apply promotion changes to database
+- `POST /api/v1/promotions/{history_id}/undo` - Revert a promotion action
+
 ## User Roles
 
 - **admin**: Full system access
