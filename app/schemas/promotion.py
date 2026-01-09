@@ -15,9 +15,11 @@ class StudentPromotionDetail(BaseModel):
     old_grade: Optional[str]
     old_class_id: Optional[int]
     old_class_name: Optional[str]
+    old_status: Optional[str] = None  # For undo support
     new_grade: Optional[str]
     new_class_id: Optional[int]
     new_class_name: Optional[str]
+    new_status: Optional[str] = None  # For graduated students
     status: str  # "promoted", "graduated", "no_class_available", "error"
 
 class PromotionPreviewResponse(BaseModel):

@@ -39,6 +39,7 @@ class UserStatus(str, enum.Enum):
     active = "active"
     inactive = "inactive"
     suspended = "suspended"
+    graduated = "graduated"
 
 class User(Base):
     __tablename__ = "users"

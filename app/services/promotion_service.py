@@ -90,16 +90,18 @@ class PromotionService:
             next_grade = PromotionService.GRADE_PROGRESSION.get(current_grade)
             
             if next_grade is None:
-                # Graduated
+                # Graduated - will set status to 'graduated'
                 details.append(StudentPromotionDetail(
                     student_id=student.id,
                     student_name=student.name,
                     old_grade=current_grade,
                     old_class_id=student.class_id,
                     old_class_name=student.class_obj.name if student.class_obj else None,
+                    old_status=student.status.value if student.status else "active",
                     new_grade=None,
                     new_class_id=None,
                     new_class_name=None,
+                    new_status="graduated",
                     status="graduated"
                 ))
                 summary["graduated"] += 1
@@ -184,10 +186,15 @@ class PromotionService:
         
         # 4. Apply changes
         for detail in actionable_details:
-            stmt = update(User).where(User.id == detail.student_id).values(
-                grade=detail.new_grade,
-                class_id=detail.new_class_id
-            )
+            update_values = {
+                "grade": detail.new_grade,
+                "class_id": detail.new_class_id
+            }
+            # Set status to 'graduated' for graduating students
+            if detail.new_status:
+                update_values["status"] = detail.new_status
+            
+            stmt = update(User).where(User.id == detail.student_id).values(**update_values)
             await db.execute(stmt)
             
         await db.commit()
@@ -223,10 +230,15 @@ class PromotionService:
         details = history.details
         for detail in details:
             # detail is a dict here because it's from JSON column
-            stmt = update(User).where(User.id == detail['student_id']).values(
-                grade=detail['old_grade'],
-                class_id=detail['old_class_id']
-            )
+            update_values = {
+                "grade": detail['old_grade'],
+                "class_id": detail['old_class_id']
+            }
+            # Restore old status if it was changed (for graduated students)
+            if detail.get('old_status'):
+                update_values["status"] = detail['old_status']
+            
+            stmt = update(User).where(User.id == detail['student_id']).values(**update_values)
             await db.execute(stmt)
             
         # 3. Update history status
