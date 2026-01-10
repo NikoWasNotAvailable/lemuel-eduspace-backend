@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Response, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import os
@@ -12,6 +12,8 @@ from app.core.auth import get_current_user, get_admin_user
 from app.core.security import create_access_token
 from app.services.user_service import UserService
 from app.services.profile_picture_service import ProfilePictureService
+from app.services.admin_activity_log_service import AdminActivityLogService
+from app.models.admin_activity_log import ActionType, EntityType
 from app.schemas.user import (
     UserCreate, 
     PublicUserCreate,
@@ -47,9 +49,11 @@ async def register_user(
 @router.post("/register/student", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_student(
     user_data: PublicUserCreate,
-    db: AsyncSession = Depends(get_async_db)
+    request: Request,
+    db: AsyncSession = Depends(get_async_db),
+    current_user: User = Depends(get_admin_user)  # Admin only
 ):
-    """Register a new student."""
+    """Register a new student (admin only)."""
     
     # Convert to UserCreate with student role
     user_create_data = UserCreate(
@@ -57,7 +61,24 @@ async def register_student(
         role="student"
     )
     
-    return await UserService.create_user(db, user_create_data)
+    new_user = await UserService.create_user(db, user_create_data)
+    
+    # Log admin activity
+    admin_name = request.headers.get("X-Admin-Name", current_user.name)
+    await AdminActivityLogService.log_activity_by_name(
+        db,
+        admin_id=current_user.id,
+        admin_name=admin_name,
+        action=ActionType.create,
+        entity_type=EntityType.user,
+        entity_id=new_user.id,
+        entity_name=new_user.name,
+        details={"role": "student", "email": new_user.email},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+    
+    return new_user
 
 # NOTE: No /register/parent endpoint needed
 # Parents access their child's student account using the parent_password field
@@ -66,6 +87,7 @@ async def register_student(
 @router.post("/register/teacher", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_teacher(
     user_data: PublicUserCreate,
+    request: Request,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)  # Admin only
 ):
@@ -77,11 +99,29 @@ async def register_teacher(
         role="teacher"
     )
     
-    return await UserService.create_user(db, user_create_data)
+    new_user = await UserService.create_user(db, user_create_data)
+    
+    # Log admin activity
+    admin_name = request.headers.get("X-Admin-Name", current_user.name)
+    await AdminActivityLogService.log_activity_by_name(
+        db,
+        admin_id=current_user.id,
+        admin_name=admin_name,
+        action=ActionType.create,
+        entity_type=EntityType.user,
+        entity_id=new_user.id,
+        entity_name=new_user.name,
+        details={"role": "teacher", "email": new_user.email},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+    
+    return new_user
 
 @router.post("/register/admin", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_admin(
     user_data: PublicUserCreate,
+    request: Request,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)  # Admin only
 ):
@@ -93,7 +133,24 @@ async def register_admin(
         role="admin"
     )
     
-    return await UserService.create_user(db, user_create_data)
+    new_user = await UserService.create_user(db, user_create_data)
+    
+    # Log admin activity
+    admin_name = request.headers.get("X-Admin-Name", current_user.name)
+    await AdminActivityLogService.log_activity_by_name(
+        db,
+        admin_id=current_user.id,
+        admin_name=admin_name,
+        action=ActionType.create,
+        entity_type=EntityType.user,
+        entity_id=new_user.id,
+        entity_name=new_user.name,
+        details={"role": "admin", "email": new_user.email},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+    
+    return new_user
 
 @router.post("/login/student", response_model=UserLoginResponse)
 async def login_student(
@@ -323,6 +380,7 @@ async def get_user_by_id(
 async def update_user_by_id(
     user_id: int,
     user_update: UserUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -333,26 +391,73 @@ async def update_user_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    
+    # Log admin activity
+    admin_name = request.headers.get("X-Admin-Name", current_user.name)
+    update_details = {k: v for k, v in user_update.dict(exclude_unset=True).items() if v is not None}
+    await AdminActivityLogService.log_activity_by_name(
+        db,
+        admin_id=current_user.id,
+        admin_name=admin_name,
+        action=ActionType.update,
+        entity_type=EntityType.user,
+        entity_id=user_id,
+        entity_name=updated_user.name,
+        details={"updated_fields": list(update_details.keys())},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+    
     return UserResponse.model_validate(updated_user)
 
 @router.delete("/{user_id}")
 async def delete_user_by_id(
     user_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
 ):
     """Delete user by ID (admin only)."""
+    # Get user info before deletion for logging
+    user_to_delete = await UserService.get_user_by_id(db, user_id)
+    if not user_to_delete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    user_name = user_to_delete.name
+    user_email = user_to_delete.email
+    user_role = user_to_delete.role
+    
     success = await UserService.delete_user(db, user_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    
+    # Log admin activity
+    admin_name = request.headers.get("X-Admin-Name", current_user.name)
+    await AdminActivityLogService.log_activity_by_name(
+        db,
+        admin_id=current_user.id,
+        admin_name=admin_name,
+        action=ActionType.delete,
+        entity_type=EntityType.user,
+        entity_id=user_id,
+        entity_name=user_name,
+        details={"deleted_user_email": user_email, "deleted_user_role": user_role},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+    
     return {"message": "User deleted successfully"}
 
 @router.patch("/{user_id}/status")
 async def update_user_status(
     user_id: int,
+    request: Request,
     status: str = Query(..., regex="^(active|inactive|suspended)$"),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_admin_user)
@@ -378,6 +483,21 @@ async def update_user_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    
+    # Log admin activity
+    admin_name = request.headers.get("X-Admin-Name", current_user.name)
+    await AdminActivityLogService.log_activity_by_name(
+        db,
+        admin_id=current_user.id,
+        admin_name=admin_name,
+        action=ActionType.update,
+        entity_type=EntityType.user,
+        entity_id=user_id,
+        entity_name=updated_user.name,
+        details={"status_changed_to": status},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
     
     return {
         "message": f"User status updated to {status}",

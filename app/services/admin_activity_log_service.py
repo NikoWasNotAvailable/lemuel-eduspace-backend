@@ -14,6 +14,60 @@ class AdminActivityLogService:
     """Service for logging admin CRUD operations."""
     
     @staticmethod
+    async def log_activity_by_name(
+        db: AsyncSession,
+        admin_id: int,
+        admin_name: str,
+        action: ActionType,
+        entity_type: EntityType,
+        entity_id: Optional[int] = None,
+        entity_name: Optional[str] = None,
+        details: Optional[dict] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
+    ) -> AdminActivityLog:
+        """
+        Log an admin activity using admin name directly (from X-Admin-Name header).
+        
+        Args:
+            db: Database session
+            admin_id: The admin user ID
+            admin_name: The admin name (from X-Admin-Name header)
+            action: Type of action (create, read, update, delete)
+            entity_type: Type of entity being affected
+            entity_id: ID of the affected entity
+            entity_name: Display name of the entity
+            details: Additional details as dict (will be stored as JSON)
+            ip_address: Client IP address
+            user_agent: Client user agent
+        """
+        try:
+            log_entry = AdminActivityLog(
+                admin_id=admin_id,
+                admin_name=admin_name,
+                action=action,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                entity_name=entity_name,
+                details=json.dumps(details) if details else None,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            
+            db.add(log_entry)
+            await db.commit()
+            await db.refresh(log_entry)
+            
+            logger.info(f"Admin activity logged: {admin_name} {action.value} {entity_type.value} {entity_id}")
+            return log_entry
+            
+        except Exception as e:
+            logger.error(f"Failed to log admin activity: {e}")
+            await db.rollback()
+            # Don't raise - logging failure shouldn't break the main operation
+            return None
+    
+    @staticmethod
     async def log_activity(
         db: AsyncSession,
         admin: User,
@@ -71,6 +125,7 @@ class AdminActivityLogService:
         skip: int = 0,
         limit: int = 100,
         admin_id: Optional[int] = None,
+        admin_name: Optional[str] = None,
         action: Optional[ActionType] = None,
         entity_type: Optional[EntityType] = None,
         start_date: Optional[datetime] = None,
@@ -82,6 +137,8 @@ class AdminActivityLogService:
         conditions = []
         if admin_id:
             conditions.append(AdminActivityLog.admin_id == admin_id)
+        if admin_name:
+            query = query.filter(AdminActivityLog.admin_name.ilike(f"%{admin_name}%"))
         if action:
             conditions.append(AdminActivityLog.action == action)
         if entity_type:
