@@ -17,6 +17,7 @@ from app.controllers.region_controller import router as region_router
 from app.controllers.banner_controller import router as banner_router
 from app.controllers.assignment_controller import router as assignment_router
 from app.controllers.promotion_controller import router as promotion_router
+from app.controllers.academic_year_controller import router as academic_year_router
 
 # Create FastAPI instance
 app = FastAPI(
@@ -53,6 +54,7 @@ app.include_router(region_router, prefix="/api/v1")
 app.include_router(banner_router, prefix="/api/v1")
 app.include_router(assignment_router, prefix="/api/v1")
 app.include_router(promotion_router, prefix="/api/v1")
+app.include_router(academic_year_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

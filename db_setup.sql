@@ -6,6 +6,17 @@ ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `classes` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `region_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `nis` VARCHAR(50) UNIQUE,                                -- Nomor Induk Siswa (jika siswa)
@@ -28,17 +39,6 @@ CREATE TABLE `users` (
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`) ON DELETE SET NULL
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `classes` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(100) NOT NULL,
-  `region_id` INT DEFAULT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -72,8 +72,13 @@ CREATE TABLE `notifications` (
   `title` VARCHAR(255) NOT NULL,
   `description` TEXT DEFAULT NULL,
   `type` ENUM('general', 'announcement', 'assignment', 'event', 'payment') DEFAULT 'general',
-  `is_scheduled` BOOLEAN DEFAULT FALSE,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `nominal` DECIMAL(10, 2) DEFAULT NULL,               -- Optional, for payment notifications
+  `date` DATETIME DEFAULT NULL,                        -- Optional, for events and assignments
+  `is_scheduled` TINYINT(1) DEFAULT 0 NOT NULL,        -- Boolean: 0 = False, 1 = True
+  `image` VARCHAR(500) DEFAULT NULL,                   -- Path to notification image
+  `created_by` INT DEFAULT NULL,                       -- Who created this notification
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -154,6 +159,82 @@ CREATE TABLE `admin_login_logs` (
   `ip_address` VARCHAR(45) DEFAULT NULL,              -- IP address (support IPv6)
   `user_agent` VARCHAR(500) DEFAULT NULL,             -- Browser/device info
   FOREIGN KEY (`admin_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+-- Admin Activity Logs table - stores admin CRUD operations for audit trail
+CREATE TABLE `admin_activity_logs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `admin_id` INT NOT NULL,
+  `admin_name` VARCHAR(100) NOT NULL,
+  `action` ENUM('create', 'read', 'update', 'delete') NOT NULL,
+  `entity_type` ENUM('user', 'class', 'subject', 'session', 'notification', 'promotion', 'teacher_subject', 'region', 'banner', 'assignment', 'academic_year') NOT NULL,
+  `entity_id` INT DEFAULT NULL,
+  `entity_name` VARCHAR(255) DEFAULT NULL,
+  `details` TEXT DEFAULT NULL,
+  `ip_address` VARCHAR(45) DEFAULT NULL,
+  `user_agent` VARCHAR(500) DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`admin_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+-- Banners table - stores promotional banners per region
+CREATE TABLE `banners` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `image_url` VARCHAR(255) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `region_id` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`region_id`) REFERENCES `regions`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+-- Promotion History table - stores mass promotion records for undo capability
+CREATE TABLE `promotion_history` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `promotion_date` DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  `details` JSON NOT NULL,                             -- Stores list of {student_id, old_grade, old_class_id, new_grade, new_class_id, status}
+  `status` ENUM('applied', 'reverted') DEFAULT 'applied' NOT NULL
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+-- Academic Years table - stores academic year periods
+CREATE TABLE `academic_years` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(50) NOT NULL UNIQUE,                 -- e.g., "2024/2025"
+  `start_date` DATE NOT NULL,
+  `end_date` DATE NOT NULL,
+  `is_current` BOOLEAN DEFAULT FALSE NOT NULL,        -- Only one should be current
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+-- User Academic History table - stores user's grade/class for each academic year
+-- This enables viewing historical data: what class/grade a student was in during previous years
+CREATE TABLE `user_academic_history` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `academic_year_id` INT NOT NULL,
+  `grade` ENUM('TKA', 'TKB', 'SD1', 'SD2', 'SD3', 'SD4', 'SD5', 'SD6', 'SMP1', 'SMP2', 'SMP3') DEFAULT NULL,
+  `class_id` INT DEFAULT NULL,
+  `role` ENUM('admin', 'teacher', 'student') NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`) ON DELETE SET NULL,
+  UNIQUE KEY `unique_user_academic_year` (`user_id`, `academic_year_id`)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4

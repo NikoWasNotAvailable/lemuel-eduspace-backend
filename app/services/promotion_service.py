@@ -6,6 +6,7 @@ from app.models.user import User, UserRole, UserGrade, UserStatus
 from app.models.classroom import ClassModel
 from app.models.promotion_history import PromotionHistory, PromotionStatus
 from app.schemas.promotion import StudentPromotionDetail, PromotionPreviewResponse
+from app.services.academic_year_service import AcademicYearService
 import json
 import logging
 
@@ -163,6 +164,14 @@ class PromotionService:
 
     @staticmethod
     async def confirm_promotion(db: AsyncSession, exclude_student_ids: List[int]) -> PromotionHistory:
+        # 0. Snapshot current state to academic year history (preserves old grade/class)
+        current_year = await AcademicYearService.get_current_academic_year(db)
+        if current_year:
+            logger.info(f"Snapshotting users before promotion for academic year {current_year.name}")
+            await AcademicYearService.snapshot_all_users_for_current_year(db)
+        else:
+            logger.warning("No current academic year set - user history will not be preserved!")
+        
         # 1. Get the plan
         preview = await PromotionService.preview_promotion(db, exclude_student_ids)
         

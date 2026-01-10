@@ -81,6 +81,9 @@ class User(Base):
     # Relationship to assignment submissions
     submissions = relationship("AssignmentSubmission", back_populates="student", cascade="all, delete-orphan")
     
+    # Relationship to academic year history
+    academic_histories = relationship("UserAcademicHistory", back_populates="user", cascade="all, delete-orphan")
+    
     @property
     def class_name(self):
         return self.class_obj.name if self.class_obj else None

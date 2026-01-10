@@ -20,6 +20,7 @@ class EntityType(str, enum.Enum):
     region = "region"
     banner = "banner"
     assignment = "assignment"
+    academic_year = "academic_year"
 
 class AdminActivityLog(Base):
     __tablename__ = "admin_activity_logs"

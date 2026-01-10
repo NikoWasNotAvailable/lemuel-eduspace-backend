@@ -11,6 +11,8 @@ from .admin_login_log import AdminLoginLog
 from .region import Region
 from .banner import Banner
 from .assignment_submission import AssignmentSubmission
+from .academic_year import AcademicYear
+from .user_academic_history import UserAcademicHistory
 
 # Export all models for easier imports
 __all__ = [
@@ -25,5 +27,7 @@ __all__ = [
     "AdminLoginLog",
     "Region",
     "Banner",
-    "AssignmentSubmission"
+    "AssignmentSubmission",
+    "AcademicYear",
+    "UserAcademicHistory"
 ]
