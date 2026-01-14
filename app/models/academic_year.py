@@ -18,7 +18,8 @@ class AcademicYear(Base):
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     
     # Relationships
-    user_histories = relationship("UserAcademicHistory", back_populates="academic_year")
+    # passive_deletes=True tells SQLAlchemy to rely on database CASCADE instead of setting FK to NULL
+    user_histories = relationship("UserAcademicHistory", back_populates="academic_year", passive_deletes=True)
     
     def __repr__(self):
         return f"<AcademicYear(id={self.id}, name='{self.name}', is_current={self.is_current})>"
