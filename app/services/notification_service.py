@@ -133,6 +133,8 @@ class NotificationService:
             update_data["date"] = notification_update.date
         if notification_update.is_scheduled is not None:
             update_data["is_scheduled"] = notification_update.is_scheduled
+        if notification_update.image is not None:
+            update_data["image"] = notification_update.image
         
         if not update_data:
             return notification  # No changes to make

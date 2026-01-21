@@ -48,61 +48,22 @@ class AdminManager:
         
         # Collect admin information
         print("\n📝 Enter admin details:")
-        name = input("Admin Name: ").strip()
-        if not name:
-            print("❌ Name is required!")
+        
+        email = input("Admin Email: ").strip()
+        if not email:
+            print("❌ Email is required!")
             return
         
-        email = input("Admin Email (optional): ").strip() or None
-        nis = input("Admin NIS (leave blank for auto-generate): ").strip()
-        if not nis:
-            nis = f"ADMIN{int(time.time())}"
-            print(f"🏷️  Auto-generated NIS: {nis}")
+        # Auto-generate NIS
+        nis = f"ADMIN{int(time.time())}"
+        print(f"🏷️  Auto-generated NIS: {nis}")
         
-        # Gender selection
-        print("\nGender options:")
-        print("1. Male")
-        print("2. Female")
-        print("3. Skip (leave blank)")
-        gender_choice = input("Select gender (1/2/3): ").strip()
+        # Set nullable fields to None
+        name = None
         gender = None
-        if gender_choice == "1":
-            gender = UserGender.male
-        elif gender_choice == "2":
-            gender = UserGender.female
-        
-        # Religion selection
-        print("\nReligion options:")
-        print("1. Islam")
-        print("2. Christian")
-        print("3. Catholic")
-        print("4. Hindu")
-        print("5. Buddhism")
-        print("6. Confucianism")
-        print("7. Other")
-        print("8. Skip (leave blank)")
-        religion_choice = input("Select religion (1-8): ").strip()
         religion = None
-        if religion_choice == "1":
-            religion = UserReligion.islam
-        elif religion_choice == "2":
-            religion = UserReligion.christian
-        elif religion_choice == "3":
-            religion = UserReligion.catholic
-        elif religion_choice == "4":
-            religion = UserReligion.hindu
-        elif religion_choice == "5":
-            religion = UserReligion.buddhism
-        elif religion_choice == "6":
-            religion = UserReligion.confucianism
-        elif religion_choice == "7":
-            religion = UserReligion.other
-        
-        # Birth place
-        birth_place = input("Birth place (optional): ").strip() or None
-        
-        # Address
-        address = input("Address (optional): ").strip() or None
+        birth_place = None
+        address = None
         
         # Password input
         print("\n🔑 Set admin password:")

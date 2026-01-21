@@ -54,6 +54,7 @@ class NotificationUpdate(BaseModel):
     nominal: Optional[Decimal] = None
     date: Optional[datetime] = None
     is_scheduled: Optional[bool] = None
+    image: Optional[str] = None  # Path to notification image
     
     @validator('title')
     def validate_title(cls, v):
