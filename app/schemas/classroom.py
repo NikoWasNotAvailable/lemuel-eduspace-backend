@@ -6,6 +6,7 @@ class ClassBase(BaseModel):
     """Base Class schema with common fields."""
     name: str
     region_id: Optional[int] = None
+    is_active: bool = True
     
     @validator('name')
     def validate_name(cls, v):
@@ -21,6 +22,7 @@ class ClassUpdate(BaseModel):
     """Schema for updating class information."""
     name: Optional[str] = None
     region_id: Optional[int] = None
+    is_active: Optional[bool] = None
     
     @validator('name')
     def validate_name(cls, v):
@@ -31,6 +33,7 @@ class ClassUpdate(BaseModel):
 class ClassResponse(ClassBase):
     """Schema for class response."""
     id: int
+    is_active: bool
     created_at: datetime
     
     class Config:

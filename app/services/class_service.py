@@ -16,7 +16,8 @@ class ClassService:
             # Create class instance
             db_class = ClassModel(
                 name=class_data.name,
-                region_id=class_data.region_id
+                region_id=class_data.region_id,
+                is_active=class_data.is_active
             )
             
             db.add(db_class)
@@ -47,10 +48,14 @@ class ClassService:
     async def get_classes(
         db: AsyncSession, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 100,
+        is_active: Optional[bool] = None
     ) -> List[ClassModel]:
-        """Get list of classes."""
-        query = select(ClassModel).offset(skip).limit(limit).order_by(ClassModel.name)
+        """Get list of classes with optional is_active filter."""
+        query = select(ClassModel)
+        if is_active is not None:
+            query = query.where(ClassModel.is_active == is_active)
+        query = query.offset(skip).limit(limit).order_by(ClassModel.name)
         result = await db.execute(query)
         return result.scalars().all()
     
@@ -103,15 +108,49 @@ class ClassService:
         return True
     
     @staticmethod
-    async def search_classes(db: AsyncSession, search_term: str) -> List[ClassModel]:
-        """Search classes by name."""
-        query = select(ClassModel).where(ClassModel.name.contains(search_term)).order_by(ClassModel.name)
+    async def search_classes(db: AsyncSession, search_term: str, is_active: Optional[bool] = None) -> List[ClassModel]:
+        """Search classes by name with optional is_active filter."""
+        query = select(ClassModel).where(ClassModel.name.contains(search_term))
+        if is_active is not None:
+            query = query.where(ClassModel.is_active == is_active)
+        query = query.order_by(ClassModel.name)
         result = await db.execute(query)
         return result.scalars().all()
     
     @staticmethod
-    async def get_classes_by_region(db: AsyncSession, region_id: int, skip: int = 0, limit: int = 100) -> List[ClassModel]:
-        """Get classes by region ID."""
-        query = select(ClassModel).where(ClassModel.region_id == region_id).offset(skip).limit(limit).order_by(ClassModel.name)
+    async def get_classes_by_region(db: AsyncSession, region_id: int, skip: int = 0, limit: int = 100, is_active: Optional[bool] = None) -> List[ClassModel]:
+        """Get classes by region ID with optional is_active filter."""
+        query = select(ClassModel).where(ClassModel.region_id == region_id)
+        if is_active is not None:
+            query = query.where(ClassModel.is_active == is_active)
+        query = query.offset(skip).limit(limit).order_by(ClassModel.name)
         result = await db.execute(query)
         return result.scalars().all()
+    
+    @staticmethod
+    async def get_active_classes_by_name(db: AsyncSession, name: str) -> Optional[ClassModel]:
+        """Get active class by name."""
+        result = await db.execute(
+            select(ClassModel).where(
+                ClassModel.name == name,
+                ClassModel.is_active == True
+            )
+        )
+        return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def duplicate_class_as_active(db: AsyncSession, original_class: ClassModel) -> ClassModel:
+        """Duplicate a class and set it as active, marking the original as inactive."""
+        # Create new active class with same name and region
+        new_class = ClassModel(
+            name=original_class.name,
+            region_id=original_class.region_id,
+            is_active=True
+        )
+        db.add(new_class)
+        
+        # Mark original class as inactive
+        original_class.is_active = False
+        
+        await db.flush()  # Get the new class ID
+        return new_class

@@ -31,21 +31,23 @@ async def create_class(
 async def get_classes(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    is_active: Optional[bool] = Query(None, description="Filter by active status (true/false)"),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of classes."""
-    classes = await ClassService.get_classes(db, skip=skip, limit=limit)
+    """Get list of classes. Optionally filter by is_active status."""
+    classes = await ClassService.get_classes(db, skip=skip, limit=limit, is_active=is_active)
     return [ClassResponse.model_validate(class_obj) for class_obj in classes]
 
 @router.get("/search", response_model=List[ClassResponse])
 async def search_classes(
     q: str = Query(..., description="Search term for class name"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status (true/false)"),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Search classes by name."""
-    classes = await ClassService.search_classes(db, q)
+    """Search classes by name. Optionally filter by is_active status."""
+    classes = await ClassService.search_classes(db, q, is_active=is_active)
     return [ClassResponse.model_validate(class_obj) for class_obj in classes]
 
 @router.get("/by-region/{region_id}", response_model=List[ClassResponse])
@@ -53,11 +55,12 @@ async def get_classes_by_region(
     region_id: int,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    is_active: Optional[bool] = Query(None, description="Filter by active status (true/false)"),
     db: AsyncSession = Depends(get_async_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get classes by region ID."""
-    classes = await ClassService.get_classes_by_region(db, region_id, skip=skip, limit=limit)
+    """Get classes by region ID. Optionally filter by is_active status."""
+    classes = await ClassService.get_classes_by_region(db, region_id, skip=skip, limit=limit, is_active=is_active)
     return [ClassResponse.model_validate(class_obj) for class_obj in classes]
 
 @router.get("/{class_id}", response_model=ClassResponse)

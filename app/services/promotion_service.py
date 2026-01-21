@@ -7,6 +7,7 @@ from app.models.classroom import ClassModel
 from app.models.promotion_history import PromotionHistory, PromotionStatus
 from app.schemas.promotion import StudentPromotionDetail, PromotionPreviewResponse
 from app.services.academic_year_service import AcademicYearService
+from app.services.class_service import ClassService
 import json
 import logging
 
@@ -29,13 +30,19 @@ class PromotionService:
     }
 
     @staticmethod
-    async def get_classes_by_grade(db: AsyncSession) -> Dict[str, List[ClassModel]]:
+    async def get_classes_by_grade(db: AsyncSession, active_only: bool = True) -> Dict[str, List[ClassModel]]:
         """
         Fetch all classes and group them by grade.
         Assumes class name starts with the grade (e.g., "SD1 A").
         Returns a dict: {"SD1": [ClassModel, ...], ...}
+        
+        Args:
+            active_only: If True, only returns active classes. Default True.
         """
-        result = await db.execute(select(ClassModel))
+        query = select(ClassModel)
+        if active_only:
+            query = query.where(ClassModel.is_active == True)
+        result = await db.execute(query)
         classes = result.scalars().all()
         
         classes_by_grade = {}
@@ -172,7 +179,7 @@ class PromotionService:
         else:
             logger.warning("No current academic year set - user history will not be preserved!")
         
-        # 1. Get the plan
+        # 1. Get the preview plan (uses active classes only)
         preview = await PromotionService.preview_promotion(db, exclude_student_ids)
         
         # 2. Filter only actionable items (promoted or graduated)
@@ -183,27 +190,51 @@ class PromotionService:
         
         if not actionable_details:
             return None
+        
+        # 3. Duplicate ALL active classes (not just ones with students)
+        # This ensures a clean slate for the new academic year
+        all_active_classes_result = await db.execute(
+            select(ClassModel).where(ClassModel.is_active == True)
+        )
+        all_active_classes = all_active_classes_result.scalars().all()
+        
+        # Create a mapping from old class ID to new class ID
+        class_id_mapping = {}
+        
+        for old_class in all_active_classes:
+            # Duplicate the class: create new active class, mark old as inactive
+            new_class = await ClassService.duplicate_class_as_active(db, old_class)
+            class_id_mapping[old_class.id] = new_class.id
+            logger.info(f"Duplicated class '{old_class.name}' (ID: {old_class.id}) to new active class (ID: {new_class.id})")
+        
+        # 4. Update actionable_details with new class IDs
+        updated_details = []
+        for detail in actionable_details:
+            detail_dict = detail.model_dump()
+            # Update new_class_id to point to the duplicated class
+            if detail.new_class_id and detail.new_class_id in class_id_mapping:
+                detail_dict['new_class_id'] = class_id_mapping[detail.new_class_id]
+            updated_details.append(detail_dict)
             
-        # 3. Create history record
-        history_details = [d.model_dump() for d in actionable_details]
+        # 5. Create history record with updated details
         history = PromotionHistory(
-            details=history_details,
+            details=updated_details,
             status=PromotionStatus.applied
         )
         db.add(history)
-        await db.flush() # Get ID
+        await db.flush()  # Get ID
         
-        # 4. Apply changes
-        for detail in actionable_details:
+        # 6. Apply changes to students
+        for detail in updated_details:
             update_values = {
-                "grade": detail.new_grade,
-                "class_id": detail.new_class_id
+                "grade": detail['new_grade'],
+                "class_id": detail['new_class_id']
             }
             # Set status to 'graduated' for graduating students
-            if detail.new_status:
-                update_values["status"] = detail.new_status
+            if detail.get('new_status'):
+                update_values["status"] = detail['new_status']
             
-            stmt = update(User).where(User.id == detail.student_id).values(**update_values)
+            stmt = update(User).where(User.id == detail['student_id']).values(**update_values)
             await db.execute(stmt)
             
         await db.commit()
@@ -235,8 +266,18 @@ class PromotionService:
         if not history or history.status != PromotionStatus.applied:
             return False
             
-        # 2. Revert changes
+        # 2. Collect class IDs to reactivate and deactivate
+        old_class_ids = set()  # Classes to reactivate
+        new_class_ids = set()  # Classes to deactivate (the duplicated ones)
+        
         details = history.details
+        for detail in details:
+            if detail.get('old_class_id'):
+                old_class_ids.add(detail['old_class_id'])
+            if detail.get('new_class_id'):
+                new_class_ids.add(detail['new_class_id'])
+        
+        # 3. Revert student changes
         for detail in details:
             # detail is a dict here because it's from JSON column
             update_values = {
@@ -249,8 +290,24 @@ class PromotionService:
             
             stmt = update(User).where(User.id == detail['student_id']).values(**update_values)
             await db.execute(stmt)
+        
+        # 4. Reactivate old classes
+        for class_id in old_class_ids:
+            old_class = await ClassService.get_class_by_id(db, class_id)
+            if old_class and not old_class.is_active:
+                old_class.is_active = True
+                logger.info(f"Reactivated class '{old_class.name}' (ID: {class_id})")
+        
+        # 5. Deactivate/delete the newly created classes (duplicated during promotion)
+        # We deactivate them instead of deleting to preserve referential integrity
+        for class_id in new_class_ids:
+            if class_id not in old_class_ids:  # Only if it's a new class, not an existing one
+                new_class = await ClassService.get_class_by_id(db, class_id)
+                if new_class and new_class.is_active:
+                    new_class.is_active = False
+                    logger.info(f"Deactivated duplicated class '{new_class.name}' (ID: {class_id})")
             
-        # 3. Update history status
+        # 6. Update history status
         history.status = PromotionStatus.reverted
         await db.commit()
         return True
