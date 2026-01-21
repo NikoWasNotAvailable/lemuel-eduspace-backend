@@ -12,6 +12,14 @@ from app.schemas.assignment_submission import AssignmentSubmissionUpdate
 
 class AssignmentService:
     
+    # Configuration
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS = {
+        '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
+        '.txt', '.rtf', '.jpg', '.jpeg', '.png', '.gif', '.zip',
+        '.rar', '.mp4', '.avi', '.mov', '.mkv', '.webm', '.mpeg', '.mp3', '.wav'
+    }
+    
     @staticmethod
     async def submit_assignment(
         db: AsyncSession, 
@@ -20,6 +28,37 @@ class AssignmentService:
         file: UploadFile
     ) -> AssignmentSubmission:
         """Submit an assignment."""
+        # Validate file
+        if not file.filename:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Filename is required"
+            )
+        
+        # Check file extension
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        if file_extension not in AssignmentService.ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File type not allowed"
+            )
+        
+        # Read file content to check size
+        file_content = await file.read()
+        file_size = len(file_content)
+        
+        if file_size > AssignmentService.MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File size exceeds maximum allowed size of {AssignmentService.MAX_FILE_SIZE // (1024*1024)}MB"
+            )
+        
+        if file_size == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File is empty"
+            )
+        
         # Check if submission already exists for this session and student
         query = select(AssignmentSubmission).where(
             and_(
@@ -35,13 +74,12 @@ class AssignmentService:
         os.makedirs(upload_dir, exist_ok=True)
         
         # Generate unique filename
-        file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(upload_dir, unique_filename)
         
         # Save file
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(file_content)
             
         relative_path = f"/uploads/assignments/{unique_filename}"
         

@@ -12,6 +12,10 @@ import uuid
 
 router = APIRouter(prefix="/banners", tags=["banners"])
 
+# Configuration
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
 @router.get("/", response_model=List[BannerResponse])
 async def get_banners(
     region_id: Optional[int] = Query(None, description="Filter by region ID"),
@@ -45,16 +49,46 @@ async def create_banner(
     current_user: User = Depends(get_admin_user)
 ):
     """Create a new banner (Admin only)."""
+    # Validate file
+    if not image.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Filename is required"
+        )
+    
+    # Check file extension
+    file_extension = os.path.splitext(image.filename)[1].lower()
+    if file_extension not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File type not allowed. Please upload JPG, PNG, GIF, or WebP images."
+        )
+    
+    # Read file content to check size
+    file_content = await image.read()
+    file_size = len(file_content)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE // (1024*1024)}MB"
+        )
+    
+    if file_size == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File is empty"
+        )
+    
     # Save file
     upload_dir = "uploads/banners"
     os.makedirs(upload_dir, exist_ok=True)
     
-    file_extension = os.path.splitext(image.filename)[1]
     file_name = f"{uuid.uuid4()}{file_extension}"
     file_path = os.path.join(upload_dir, file_name)
     
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
+        buffer.write(file_content)
         
     # Create URL (relative path)
     image_url = f"/uploads/banners/{file_name}"
@@ -83,16 +117,39 @@ async def update_banner(
     if description is not None:
         update_data['description'] = description
         
-    if image:
+    if image and image.filename:
+        # Check file extension
+        file_extension = os.path.splitext(image.filename)[1].lower()
+        if file_extension not in ALLOWED_IMAGE_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File type not allowed. Please upload JPG, PNG, GIF, or WebP images."
+            )
+        
+        # Read file content to check size
+        file_content = await image.read()
+        file_size = len(file_content)
+        
+        if file_size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE // (1024*1024)}MB"
+            )
+        
+        if file_size == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File is empty"
+            )
+        
         upload_dir = "uploads/banners"
         os.makedirs(upload_dir, exist_ok=True)
         
-        file_extension = os.path.splitext(image.filename)[1]
         file_name = f"{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(upload_dir, file_name)
         
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
+            buffer.write(file_content)
             
         update_data['image_url'] = f"/uploads/banners/{file_name}"
     

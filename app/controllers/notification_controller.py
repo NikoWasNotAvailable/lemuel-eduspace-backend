@@ -24,22 +24,56 @@ import uuid
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
+# Configuration
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
 @router.post("/upload-image", response_model=dict)
 async def upload_notification_image(
     file: UploadFile = File(...),
     current_user: User = Depends(get_teacher_or_admin_user)
 ):
     """Upload an image for a notification."""
+    # Validate file
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Filename is required"
+        )
+    
+    # Check file extension
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    if file_extension not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File type not allowed. Please upload JPG, PNG, GIF, or WebP images."
+        )
+    
+    # Read file content to check size
+    file_content = await file.read()
+    file_size = len(file_content)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE // (1024*1024)}MB"
+        )
+    
+    if file_size == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File is empty"
+        )
+    
     upload_dir = "uploads/notifications"
     os.makedirs(upload_dir, exist_ok=True)
     
     # Generate unique filename
-    file_extension = os.path.splitext(file.filename)[1]
     filename = f"{uuid.uuid4()}{file_extension}"
     file_path = os.path.join(upload_dir, filename)
     
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(file_content)
         
     # Return relative path
     return {"image_path": f"/uploads/notifications/{filename}"}

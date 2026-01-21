@@ -15,11 +15,38 @@ class SessionAttachmentService:
     
     # Configuration
     UPLOAD_DIRECTORY = "uploads/session_attachments"
-    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
     ALLOWED_EXTENSIONS = {
         '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
         '.txt', '.rtf', '.jpg', '.jpeg', '.png', '.gif', '.zip',
-        '.rar', '.mp4', '.avi', '.mov', '.mp3', '.wav'
+        '.rar', '.mp4', '.avi', '.mov', '.mkv', '.webm', '.mpeg', '.mp3', '.wav'
+    }
+    
+    # MIME type mapping for files that browsers might not detect correctly
+    MIME_TYPES = {
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.ppt': 'application/vnd.ms-powerpoint',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.txt': 'text/plain',
+        '.rtf': 'application/rtf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.zip': 'application/zip',
+        '.rar': 'application/vnd.rar',
+        '.mp4': 'video/mp4',
+        '.avi': 'video/x-msvideo',
+        '.mov': 'video/quicktime',
+        '.mkv': 'video/x-matroska',
+        '.webm': 'video/webm',
+        '.mpeg': 'video/mpeg',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav'
     }
     
     @staticmethod
@@ -44,6 +71,25 @@ class SessionAttachmentService:
         extension = SessionAttachmentService._get_file_extension(original_filename)
         unique_id = str(uuid.uuid4())
         return f"{unique_id}{extension}"
+    
+    @staticmethod
+    def _get_content_type(filename: str, browser_content_type: str = None) -> str:
+        """Get the correct MIME type for a file based on its extension.
+        
+        This is important because browsers often send incorrect MIME types,
+        especially for video files like MKV.
+        """
+        extension = SessionAttachmentService._get_file_extension(filename)
+        
+        # Use our mapping if available, otherwise fall back to browser content type
+        if extension in SessionAttachmentService.MIME_TYPES:
+            return SessionAttachmentService.MIME_TYPES[extension]
+        
+        # Fall back to browser content type if available
+        if browser_content_type and browser_content_type != "application/octet-stream":
+            return browser_content_type
+        
+        return "application/octet-stream"
     
     @staticmethod
     async def upload_file(
@@ -114,13 +160,19 @@ class SessionAttachmentService:
             with open(file_path, "wb") as buffer:
                 buffer.write(file_content)
             
+            # Get correct content type based on file extension
+            content_type = SessionAttachmentService._get_content_type(
+                file.filename, 
+                file.content_type
+            )
+            
             # Create database record
             attachment_data = SessionAttachmentCreate(
                 session_id=session_id,
                 filename=file.filename,
                 file_path=file_path,
                 file_size=file_size,
-                content_type=file.content_type or "application/octet-stream",
+                content_type=content_type,
                 uploaded_by=uploaded_by,
                 name=name if name else file.filename,
                 type=attachment_type
