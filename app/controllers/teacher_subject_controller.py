@@ -94,7 +94,8 @@ async def get_teacher_subjects(
                 "id": assignment.subject.id,
                 "name": assignment.subject.name,
                 "class_id": assignment.subject.class_id,
-                "class_name": assignment.subject.class_obj.name if assignment.subject.class_obj else None
+                "class_name": assignment.subject.class_obj.name if assignment.subject.class_obj else None,
+                "class_is_active": assignment.subject.class_obj.is_active if assignment.subject.class_obj else None
             }
             subjects.append(subject_info)
     

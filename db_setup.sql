@@ -203,6 +203,7 @@ CREATE TABLE `promotion_history` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `promotion_date` DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
   `details` JSON NOT NULL,                             -- Stores list of {student_id, old_grade, old_class_id, new_grade, new_class_id, status}
+  `class_mapping` JSON DEFAULT NULL,                   -- Stores {old_class_id: new_class_id} for all duplicated classes
   `status` ENUM('applied', 'reverted') DEFAULT 'applied' NOT NULL
 )
 ENGINE=InnoDB

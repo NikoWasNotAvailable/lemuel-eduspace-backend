@@ -1,8 +1,11 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models.classroom import ClassModel
+from app.models.subject import Subject
+from app.models.teacher_subject import TeacherSubject
 from app.schemas.classroom import ClassCreate, ClassUpdate
 from fastapi import HTTPException, status
 
@@ -140,7 +143,10 @@ class ClassService:
     
     @staticmethod
     async def duplicate_class_as_active(db: AsyncSession, original_class: ClassModel) -> ClassModel:
-        """Duplicate a class and set it as active, marking the original as inactive."""
+        """
+        Duplicate a class and set it as active, marking the original as inactive.
+        Also duplicates all subjects and their teacher assignments.
+        """
         # Create new active class with same name and region
         new_class = ClassModel(
             name=original_class.name,
@@ -153,4 +159,31 @@ class ClassService:
         original_class.is_active = False
         
         await db.flush()  # Get the new class ID
+        
+        # Get all subjects from the original class with their teacher assignments
+        subjects_query = select(Subject).options(
+            selectinload(Subject.teacher_subjects)
+        ).where(Subject.class_id == original_class.id)
+        subjects_result = await db.execute(subjects_query)
+        original_subjects = subjects_result.scalars().all()
+        
+        # Duplicate each subject and its teacher assignments
+        for original_subject in original_subjects:
+            # Create new subject with same name but linked to new class
+            new_subject = Subject(
+                name=original_subject.name,
+                class_id=new_class.id
+            )
+            db.add(new_subject)
+            await db.flush()  # Get the new subject ID
+            
+            # Duplicate teacher assignments for this subject
+            for teacher_subject in original_subject.teacher_subjects:
+                new_teacher_subject = TeacherSubject(
+                    teacher_id=teacher_subject.teacher_id,
+                    subject_id=new_subject.id
+                )
+                db.add(new_teacher_subject)
+        
+        await db.flush()
         return new_class

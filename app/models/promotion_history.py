@@ -12,6 +12,7 @@ class PromotionHistory(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     promotion_date = Column(DateTime, default=func.current_timestamp(), nullable=False)
     details = Column(JSON, nullable=False)  # Stores list of {student_id, old_grade, old_class_id, new_grade, new_class_id}
+    class_mapping = Column(JSON, nullable=True)  # Stores {old_class_id: new_class_id} for all duplicated classes
     status = Column(Enum(PromotionStatus), default=PromotionStatus.applied, nullable=False)
     
     def __repr__(self):

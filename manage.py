@@ -49,9 +49,14 @@ class AdminManager:
         # Collect admin information
         print("\n📝 Enter admin details:")
         
+        name = input("Admin Name: ").strip()
+        if not name:
+            print("❌ Name is required!")
+            return
+        
         email = input("Admin Email: ").strip()
         if not email:
-            print("❌ Email is required!")
+            print("❌ Email is required for login!")
             return
         
         # Auto-generate NIS
@@ -59,7 +64,6 @@ class AdminManager:
         print(f"🏷️  Auto-generated NIS: {nis}")
         
         # Set nullable fields to None
-        name = None
         gender = None
         religion = None
         birth_place = None

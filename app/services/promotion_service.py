@@ -215,10 +215,14 @@ class PromotionService:
             if detail.new_class_id and detail.new_class_id in class_id_mapping:
                 detail_dict['new_class_id'] = class_id_mapping[detail.new_class_id]
             updated_details.append(detail_dict)
+        
+        # Convert class_id_mapping keys to strings for JSON serialization
+        class_mapping_json = {str(k): v for k, v in class_id_mapping.items()}
             
-        # 5. Create history record with updated details
+        # 5. Create history record with updated details and class mapping
         history = PromotionHistory(
             details=updated_details,
+            class_mapping=class_mapping_json,
             status=PromotionStatus.applied
         )
         db.add(history)
@@ -265,19 +269,9 @@ class PromotionService:
         
         if not history or history.status != PromotionStatus.applied:
             return False
-            
-        # 2. Collect class IDs to reactivate and deactivate
-        old_class_ids = set()  # Classes to reactivate
-        new_class_ids = set()  # Classes to deactivate (the duplicated ones)
         
+        # 2. Revert student changes
         details = history.details
-        for detail in details:
-            if detail.get('old_class_id'):
-                old_class_ids.add(detail['old_class_id'])
-            if detail.get('new_class_id'):
-                new_class_ids.add(detail['new_class_id'])
-        
-        # 3. Revert student changes
         for detail in details:
             # detail is a dict here because it's from JSON column
             update_values = {
@@ -291,23 +285,25 @@ class PromotionService:
             stmt = update(User).where(User.id == detail['student_id']).values(**update_values)
             await db.execute(stmt)
         
-        # 4. Reactivate old classes
-        for class_id in old_class_ids:
-            old_class = await ClassService.get_class_by_id(db, class_id)
+        # 3. Use class_mapping to reactivate old classes and deactivate new ones
+        class_mapping = history.class_mapping or {}
+        
+        for old_class_id_str, new_class_id in class_mapping.items():
+            old_class_id = int(old_class_id_str)
+            
+            # Reactivate old class
+            old_class = await ClassService.get_class_by_id(db, old_class_id)
             if old_class and not old_class.is_active:
                 old_class.is_active = True
-                logger.info(f"Reactivated class '{old_class.name}' (ID: {class_id})")
-        
-        # 5. Deactivate/delete the newly created classes (duplicated during promotion)
-        # We deactivate them instead of deleting to preserve referential integrity
-        for class_id in new_class_ids:
-            if class_id not in old_class_ids:  # Only if it's a new class, not an existing one
-                new_class = await ClassService.get_class_by_id(db, class_id)
-                if new_class and new_class.is_active:
-                    new_class.is_active = False
-                    logger.info(f"Deactivated duplicated class '{new_class.name}' (ID: {class_id})")
+                logger.info(f"Reactivated class '{old_class.name}' (ID: {old_class_id})")
             
-        # 6. Update history status
+            # Deactivate new (duplicated) class
+            new_class = await ClassService.get_class_by_id(db, new_class_id)
+            if new_class and new_class.is_active:
+                new_class.is_active = False
+                logger.info(f"Deactivated duplicated class '{new_class.name}' (ID: {new_class_id})")
+            
+        # 4. Update history status
         history.status = PromotionStatus.reverted
         await db.commit()
         return True

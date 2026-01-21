@@ -262,6 +262,52 @@ Parents don't have separate accounts. Instead, they access their child's student
 - **Login endpoint**: `POST /api/v1/users/login/parent`
 - **Token includes**: `parent_access: true` claim for frontend differentiation
 
+**Setting up parent access:**
+1. Student sets parent password via `POST /api/v1/users/me/parent-password/set`
+2. Parent logs in via `POST /api/v1/users/login/parent` with student's identifier and parent password
+
+### Academic Year System
+
+Track student/teacher history across academic years:
+- **Academic Years**: Create/manage school years (e.g., "2024/2025")
+- **User History**: Snapshots of user's grade/class preserved per academic year
+- **Endpoints**: `GET /api/v1/academic-years/`, `POST /api/v1/academic-years/snapshot`
+
+### Promotion System
+
+Mass promote students to next grade level:
+1. **Preview**: `POST /api/v1/promotions/preview` - See proposed changes
+2. **Confirm**: `POST /api/v1/promotions/confirm` - Apply changes
+3. **Undo**: `POST /api/v1/promotions/{history_id}/undo` - Revert promotion
+
+**Promotion behavior:**
+- All active classes are duplicated (new active copies created)
+- Old classes are marked as inactive
+- Subjects and teacher assignments are copied to new classes
+- Students are assigned to appropriate new active classes
+- SMP3 students are graduated (status changed to 'graduated')
+
+### Class Active Status
+
+Classes have an `is_active` flag:
+- **Active classes**: Current academic year classes
+- **Inactive classes**: Previous year classes (archived)
+- **Filter**: `GET /api/v1/classes/?is_active=true`
+
+## Admin CLI
+
+Use the management CLI to create admin users:
+
+```bash
+# Windows PowerShell
+.\manage.ps1 create-admin    # Interactive admin creation
+.\manage.ps1 default-admin   # Create default admin (ADMIN001/SuperSecretAdmin123!)
+.\manage.ps1 list-admins     # List all admins
+
+# Direct Python
+python manage.py create-admin
+```
+
 ## User Grades
 
 - **TKA**, **TKB**: Kindergarten levels
