@@ -13,6 +13,7 @@ class NotificationBase(BaseModel):
     date: Optional[datetime] = None  # Optional, for events and assignments
     is_scheduled: bool = False
     image: Optional[str] = None  # Path to notification image
+    link: Optional[str] = None  # Optional URL link for notification redirect
 
 class NotificationCreate(NotificationBase):
     @validator('title')
@@ -55,6 +56,7 @@ class NotificationUpdate(BaseModel):
     date: Optional[datetime] = None
     is_scheduled: Optional[bool] = None
     image: Optional[str] = None  # Path to notification image
+    link: Optional[str] = None  # Optional URL link for notification redirect
     
     @validator('title')
     def validate_title(cls, v):

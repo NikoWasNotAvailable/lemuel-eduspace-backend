@@ -21,6 +21,7 @@ class Notification(Base):
     date = Column(DateTime, nullable=True)  # Optional, for events and assignments
     is_scheduled = Column(Integer, default=0, nullable=False)  # Boolean: 0 = False, 1 = True
     image = Column(String(500), nullable=True)  # Path to notification image
+    link = Column(String(500), nullable=True)  # Optional URL link for notification redirect
     created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # Who created this notification
     created_at = Column(DateTime, default=func.current_timestamp(), nullable=False)
     

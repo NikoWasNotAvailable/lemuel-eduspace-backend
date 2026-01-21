@@ -77,6 +77,7 @@ CREATE TABLE `notifications` (
   `date` DATETIME DEFAULT NULL,                        -- Optional, for events and assignments
   `is_scheduled` TINYINT(1) DEFAULT 0 NOT NULL,        -- Boolean: 0 = False, 1 = True
   `image` VARCHAR(500) DEFAULT NULL,                   -- Path to notification image
+  `link` VARCHAR(500) DEFAULT NULL,                    -- Optional URL link for notification redirect
   `created_by` INT DEFAULT NULL,                       -- Who created this notification
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
