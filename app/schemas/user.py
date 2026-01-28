@@ -39,12 +39,6 @@ class UserCreate(UserBase):
             if len(v) < 8:
                 raise ValueError('Parent password must be at least 8 characters long')
         return v
-    
-    @validator('nis')
-    def validate_nis(cls, v):
-        if v and len(v) < 5:
-            raise ValueError('NIS must be at least 5 characters long')
-        return v
 
 class PublicUserCreate(BaseModel):
     """Schema for public user registration (role is set by endpoint, not user)."""
@@ -67,12 +61,6 @@ class PublicUserCreate(BaseModel):
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
-        return v
-    
-    @validator('nis')
-    def validate_nis(cls, v):
-        if v and len(v) < 5:
-            raise ValueError('NIS must be at least 5 characters long')
         return v
 
 class UserUpdate(BaseModel):
