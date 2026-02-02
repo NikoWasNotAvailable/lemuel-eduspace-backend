@@ -65,12 +65,12 @@ class UserService:
             if "nis" in str(e):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="NIS already exists"
+                    detail="NIS or email already exists"
                 )
             elif "email" in str(e):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Email already exists"
+                    detail="NIS or emailalready exists"
                 )
             else:
                 raise HTTPException(
@@ -198,12 +198,12 @@ class UserService:
             if "nis" in str(e):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="NIS already exists"
+                    detail="NIS or email already exists"
                 )
             elif "email" in str(e):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Email already exists"
+                    detail="NIS or email already exists"
                 )
             else:
                 raise HTTPException(

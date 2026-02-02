@@ -13,7 +13,7 @@ from app.schemas.assignment_submission import AssignmentSubmissionUpdate
 class AssignmentService:
     
     # Configuration
-    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
     ALLOWED_EXTENSIONS = {
         '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
         '.txt', '.rtf', '.jpg', '.jpeg', '.png', '.gif', '.zip',

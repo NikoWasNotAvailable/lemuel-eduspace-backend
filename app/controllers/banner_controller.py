@@ -13,8 +13,8 @@ import uuid
 router = APIRouter(prefix="/banners", tags=["banners"])
 
 # Configuration
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'}
 
 @router.get("/", response_model=List[BannerResponse])
 async def get_banners(

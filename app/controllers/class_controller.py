@@ -16,14 +16,6 @@ async def create_class(
     current_user: User = Depends(get_admin_user)
 ):
     """Create a new class (admin only)."""
-    # Check if class with same name already exists
-    existing_class = await ClassService.get_class_by_name(db, class_data.name)
-    if existing_class:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Class with this name already exists"
-        )
-    
     new_class = await ClassService.create_class(db, class_data)
     return ClassResponse.model_validate(new_class)
 
@@ -86,15 +78,7 @@ async def update_class(
     current_user: User = Depends(get_teacher_or_admin_user)
 ):
     """Update class (teacher or admin only)."""
-    # Check if another class with the same name already exists
-    if class_update.name:
-        existing_class = await ClassService.get_class_by_name(db, class_update.name)
-        if existing_class and existing_class.id != class_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Class with this name already exists"
-            )
-    
+    # Check if another class with the same name already exists    
     updated_class = await ClassService.update_class(db, class_id, class_update)
     if not updated_class:
         raise HTTPException(

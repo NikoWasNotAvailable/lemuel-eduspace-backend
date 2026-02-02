@@ -25,7 +25,7 @@ import uuid
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 # Configuration
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
 
 @router.post("/upload-image", response_model=dict)
